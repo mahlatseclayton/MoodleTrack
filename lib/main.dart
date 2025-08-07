@@ -188,7 +188,6 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   bool isCustomer = true; //student
   final TextEditingController emailController = TextEditingController();
-  final TextEditingController schoolNameController = TextEditingController();
   final TextEditingController passController = TextEditingController();
 
   Future<void> _login() async {
@@ -197,17 +196,8 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => isLoading = true);
 
     try {
-      final email = emailController.text.trim().toLowerCase();
+      final email = emailController.text.trim(); // removed .toLowerCase()
       final password = passController.text.trim();
-
-      // Check if email exists
-      final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
-      if (methods.isEmpty) {
-        throw FirebaseAuthException(
-          code: 'user-not-found',
-          message: 'No user found with this email',
-        );
-      }
 
       // Sign in with email and password
       UserCredential userCredential = await FirebaseAuth.instance
@@ -248,7 +238,7 @@ class _LoginPageState extends State<LoginPage> {
       }
       Fluttertoast.showToast(msg: message);
     } catch (e) {
-      Fluttertoast.showToast(msg: 'Error: ${e.toString()}');
+      Fluttertoast.showToast(msg: ' ${e.toString()}');
     } finally {
       if (mounted) {
         setState(() => isLoading = false);
@@ -370,57 +360,7 @@ class _LoginPageState extends State<LoginPage> {
                           ],
                         ),
                         const SizedBox(height: 10),
-                        // User type toggle
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.grey[600],
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    isCustomer = true;
-                                  });
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                  margin: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(25),
-                                    color: isCustomer ? Colors.indigo[900] : Colors.grey[600],
-                                  ),
-                                  child: Text(
-                                    "Student",
-                                    style: TextStyle(fontSize: 16, color: Colors.grey[300]),
-                                  ),
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    isCustomer = false;
-                                  });
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                  margin: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(25),
-                                    color: isCustomer ? Colors.grey[600] : Colors.indigo[900],
-                                  ),
-                                  child: Text(
-                                    "Teacher",
-                                    style: TextStyle(fontSize: 16, color: Colors.grey[300]),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 10),
+
                         // Email TextFormField
                         TextFormField(
                           controller: emailController,
@@ -439,22 +379,7 @@ class _LoginPageState extends State<LoginPage> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: 10),
-                        // School TextFormField
-                        TextFormField(
-                          controller: schoolNameController,
-                          decoration: InputDecoration(
-                            prefixIcon: Icon(Icons.book, color: Colors.indigo[900]),
-                            hintText: "Enter your school name",
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your school name';
-                            }
-                            return null;
-                          },
-                        ),
+
                         const SizedBox(height: 10),
                         // Password TextFormField
                         TextFormField(
@@ -547,7 +472,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController surNameController=TextEditingController();
   final TextEditingController passController=TextEditingController();
   final TextEditingController cpassController=TextEditingController();
-  final TextEditingController schoolController=TextEditingController();
   final TextEditingController emailController=TextEditingController();
   // final email
   @override
@@ -563,7 +487,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
 
   bool verifyForm(){
-    if(nameController.text.isEmpty||passController.text.isEmpty ||cpassController.text.isEmpty|| surNameController.text.isEmpty||emailController.text.isEmpty||schoolController.text.isEmpty){
+    if(nameController.text.isEmpty||passController.text.isEmpty ||cpassController.text.isEmpty|| surNameController.text.isEmpty||emailController.text.isEmpty){
       return false;
     }
     return true;
@@ -761,15 +685,7 @@ bool spaceCheck(String x){
                       ),
                       controller: surNameController,
                     ),
-                    const SizedBox(height:10),
-                    TextField(
-                      decoration:InputDecoration(
-                        prefixIcon:Icon(Icons.school,color:Colors.indigo[900]),
-                        hintText: "Enter your school name",
-                        border:OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-                      ),
-                      controller: schoolController,
-                    ),
+
                     const SizedBox(height: 10),
                     TextField(
                       decoration: InputDecoration(
@@ -1077,112 +993,104 @@ class _forgotPassWordPageState extends State<forgotPassWordPage> {
   }
 }
 
-class verifyPassWord extends StatefulWidget {
-
-  final String? name;
-  final String? surname;
-  final String? email;
-  final String? school;
-
-  const verifyPassWord({
-    super.key,
-    required this.name,
-    required this.surname,
-    required this.email,
-    required this.school,
-  });
-
-  @override
-  State<verifyPassWord> createState() => _verifyPassWordState();
-}
-
-class _verifyPassWordState extends State<verifyPassWord> {
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[600],
-      body: SafeArea(
-        child:Stack(
-          children: [
-            Container(
-              width: double.infinity,
-              height: double.infinity,
-              decoration:BoxDecoration(
-                image:DecorationImage(image:AssetImage("images/background.jpg"),
-                    fit: BoxFit.cover),
-
-              ),
-
-            ),
-            Text("Verify Account",style:TextStyle(
-              color: Colors.white,
-              fontSize: 29,
-              fontWeight: FontWeight.bold,
-
-            ),
-            ),
-
-
-
-            Center(
-              child:  Container(
-                height:150,
-                margin: EdgeInsets.all(30),
-
-
-                padding: EdgeInsets.all(12),
-
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow:[
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 10,
-                      spreadRadius: 3,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-
-                    SizedBox(height: 10),
-                    TextField(
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-                        prefixIcon: Icon(Icons.security,color: Colors.indigo[900],),
-                        hint: Text("Enter verification code"),
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    ElevatedButton.icon(
-                      onPressed:(){
-
-                      },
-                      label: Text("Verify"),
-                      icon: Icon(Icons.confirmation_num),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.indigo[900],
-                        foregroundColor: Colors.grey[300],
-                        textStyle: const TextStyle(fontSize: 18),
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-
-    );
-
-
-  }
-}
+// class verifyPassWord extends StatefulWidget {
+//
+//   final String? name;
+//   final String? surname;
+//   final String? email;
+//
+//
+//   const verifyPassWord({
+//     super.key,
+//     required this.name,
+//     required this.surname,
+//     required this.email,
+//
+//   });
+//
+//   @override
+//   State<verifyPassWord> createState() => _verifyPassWordState();
+// }
+//
+// class _verifyPassWordState extends State<verifyPassWord> {
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: Colors.grey[600],
+//       body: SafeArea(
+//         child:Stack(
+//           children: [
+//             Container(
+//               width: double.infinity,
+//               height: double.infinity,
+//               decoration:BoxDecoration(
+//                 image:DecorationImage(image:AssetImage("images/background.jpg"),
+//                     fit: BoxFit.cover),
+//
+//               ),
+//
+//             ),
+//             Text("Verify Account",style:TextStyle(
+//               color: Colors.white,
+//               fontSize: 29,
+//               fontWeight: FontWeight.bold,
+//
+//             ),
+//             ),
+//
+//
+//
+//             Center(
+//               child:  Container(
+//                 height:150,
+//                 margin: EdgeInsets.all(30),
+//
+//
+//                 padding: EdgeInsets.all(12),
+//
+//                 decoration: BoxDecoration(
+//                   color: Colors.grey[200],
+//                   borderRadius: BorderRadius.circular(30),
+//                   boxShadow:[
+//                     BoxShadow(
+//                       color: Colors.black.withOpacity(0.3),
+//                       blurRadius: 10,
+//                       spreadRadius: 3,
+//                     ),
+//                   ],
+//                 ),
+//                 child: Column(
+//                   children: [
+//
+//
+//                     SizedBox(height: 12),
+//                     ElevatedButton.icon(
+//                       onPressed:(){
+//
+//                       },
+//                       label: Text("Verify"),
+//                       icon: Icon(Icons.confirmation_num),
+//                       style: ElevatedButton.styleFrom(
+//                         backgroundColor: Colors.indigo[900],
+//                         foregroundColor: Colors.grey[300],
+//                         textStyle: const TextStyle(fontSize: 18),
+//                         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+//                       ),
+//                     ),
+//                   ],
+//                 ),
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//
+//     );
+//
+//
+//   }
+// }
 
 
 
