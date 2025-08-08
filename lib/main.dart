@@ -63,14 +63,14 @@ class _HomepageState extends State<Homepage> {
             width:double.infinity,
 
             decoration: BoxDecoration(
-              image:DecorationImage(image: AssetImage("images/background.jpg"),
+              image:DecorationImage(image: AssetImage("images/background1.jpg"),
                   fit: BoxFit.cover),
             ),
             child:       Container(
               width: double.infinity,
               height: 300,
               decoration:BoxDecoration(
-                color: (Colors.purple[900] ?? Colors.purple[900])!.withOpacity(.35),
+                // color: (Colors.purple[900] ?? Colors.purple[900])!.withOpacity(.),
               ),
             ),
           ),
@@ -97,19 +97,19 @@ class _HomepageState extends State<Homepage> {
                           fontWeight: FontWeight.bold,
                         )
                         ),
-                        Text("Live ",style:TextStyle(
+                        Text("Mentee",style:TextStyle(
                           color: Colors.grey[400],
                           fontSize: 50,
                           fontWeight: FontWeight.bold,
                         )
                         ),
-                        Text("Learn !",style:TextStyle(
+                        Text("Growth Tracker",style:TextStyle(
                           color: Colors.grey[400],
                           fontSize: 50,
                           fontWeight: FontWeight.bold,
                         )
                         ),
-                        Text("Empowering you to learn smarter, connect deeper, and achieve more.",style:TextStyle(
+                        Text("Mentor. Connect. Elevate.",style:TextStyle(
                           color: Colors.grey[200],
                           fontSize: 23,
                           fontWeight: FontWeight.bold,
@@ -258,7 +258,7 @@ class _LoginPageState extends State<LoginPage> {
               height: double.infinity,
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage("images/background.jpg"),
+                  image: AssetImage("images/background1.jpg"),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -269,7 +269,7 @@ class _LoginPageState extends State<LoginPage> {
               child: Text(
                 "Login",
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Colors.grey[400],
                   fontSize: 29,
                   fontWeight: FontWeight.bold,
                 ),
@@ -492,9 +492,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
     return true;
   }
-  // bool validSchool(){
-  //   //check if the school mentioned is existing !!!
-  // }
+
   bool validInput(){
     // check email validity..
     final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
@@ -567,303 +565,352 @@ bool spaceCheck(String x){
     return Scaffold(
       backgroundColor: Colors.grey[600],
       body: SafeArea(
-        child:Stack(
-
-
+        child: Stack(
           children: [
+            // Background image covers entire screen
             Container(
-              height:double.infinity,
+              height: double.infinity,
               width: double.infinity,
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage("images/background.jpg"),
+                  image: AssetImage("images/background1.jpg"),
                   fit: BoxFit.cover,
                 ),
               ),
             ),
-            Text("Sign Up",style:TextStyle(
-              color: Colors.white,
-              fontSize: 29,
-              fontWeight: FontWeight.bold,
 
-            ),
-            ),
-
-            Center(
-              child:Container(
-                height: 520,
-                margin: const EdgeInsets.all(25),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 10,
-                      spreadRadius: 3,
+            // Top title text, centered horizontally, positioned near top with padding
+            Positioned(
+              top: 60,
+              left: 0,
+              right: 0,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "Create",
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 38,
+                      fontWeight: FontWeight.bold,
                     ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    // Login/Sign up toggle
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            isSignUp=false;
-                            Navigator.pop(context);
+                  ),
+                  Text(
+                    "New",
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 38,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    "Account",
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 38,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-                          },
-                          child: Column(
-                            children: [
-                              Text(
-                                "Login",
-                                style: TextStyle(
-                                  fontSize: 19.0,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.cyan[200],
-                                ),
+            // Form container, scrollable, centered horizontally and positioned below title
+            Positioned.fill(
+              top: 220, // pushes container below the title text nicely
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 25),
+                child: Center(
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      maxWidth: 500, // optional max width for bigger screens
+                    ),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 10,
+                          spreadRadius: 3,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Login/Sign up toggle
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                isSignUp = false;
+                                Navigator.pop(context);
+                              },
+                              child: Column(
+                                children: [
+                                  Text(
+                                    "Login",
+                                    style: TextStyle(
+                                      fontSize: 19.0,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.cyan[200],
+                                    ),
+                                  ),
+                                  Container(
+                                    height: 3,
+                                    width: 55,
+                                    margin: const EdgeInsets.only(top: 5),
+                                    color: Colors.orange[300],
+                                  ),
+                                ],
                               ),
-                              Container(
-                                height: 3,
-                                width: 55,
-                                margin: const EdgeInsets.only(top: 5),
-                                color: Colors.orange[300],
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  isSignUp = true;
+                                });
+                              },
+                              child: Column(
+                                children: [
+                                  Text(
+                                    "Sign Up",
+                                    style: TextStyle(
+                                      fontSize: 19.0,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.indigo[900],
+                                    ),
+                                  ),
+                                  Container(
+                                    height: 3,
+                                    width: 55,
+                                    margin: const EdgeInsets.only(top: 5),
+                                    color: Colors.orange[300],
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Name field
+                        TextField(
+                          controller: nameController,
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.person, color: Colors.indigo[900]),
+                            hintText: "Enter your name",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
                           ),
                         ),
-                        GestureDetector(
-                          onTap: ()  {
 
-                            setState(() {
-                              isSignUp = true;
-                            });
+                        const SizedBox(height: 15),
+
+                        // Surname field
+                        TextField(
+                          controller: surNameController,
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.person, color: Colors.indigo[900]),
+                            hintText: "Enter your surname",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 15),
+
+                        // Email field
+                        TextField(
+                          controller: emailController,
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.email, color: Colors.indigo[900]),
+                            hintText: "Enter your email",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                        ),
+
+                        const SizedBox(height: 15),
+
+                        // Password field
+                        TextField(
+                          controller: passController,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.lock, color: Colors.indigo[900]),
+                            hintText: "Enter new password",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 15),
+
+                        // Confirm password field
+                        TextField(
+                          controller: cpassController,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.lock, color: Colors.indigo[900]),
+                            hintText: "Confirm password",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Register & Verify button
+                        ElevatedButton.icon(
+                          onPressed: isLoading
+                              ? null
+                              : () async {
+                            setState(() => isLoading = true);
+
+                            try {
+                              // 1. Form validations
+                              if (!verifyForm()) {
+                                Fluttertoast.showToast(msg: "All fields are required");
+                                setState(() => isLoading = false);
+                                return;
+                              }
+
+                              // 2. Password validation
+                              final String? passValidation = validatePass(passController.text.trim());
+                              if (passValidation != null) {
+                                Fluttertoast.showToast(msg: passValidation);
+                                setState(() => isLoading = false);
+                                return;
+                              }
+
+                              // 3. Email format validation
+                              if (!validInput()) {
+                                Fluttertoast.showToast(msg: "Please enter a valid email address");
+                                setState(() => isLoading = false);
+                                return;
+                              }
+
+                              // 4. Password match validation
+                              if (cpassController.text.trim() != passController.text.trim()) {
+                                Fluttertoast.showToast(msg: "Passwords do not match");
+                                setState(() => isLoading = false);
+                                return;
+                              }
+
+                              final email = emailController.text.trim();
+
+                              // 5. Space check validation
+                              if (!spaceCheck(nameController.text) ||
+                                  !spaceCheck(surNameController.text) ||
+                                  !spaceCheck(emailController.text)) {
+                                Fluttertoast.showToast(msg: "Spaces not allowed in name/surname/email");
+                                setState(() => isLoading = false);
+                                return;
+                              }
+
+                              // 6. Check if email already exists
+                              List<String> methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
+                              if (methods.isNotEmpty) {
+                                Fluttertoast.showToast(msg: "This email is already registered");
+                                setState(() => isLoading = false);
+                                return;
+                              }
+
+                              // 7. Create user if all validations pass
+                              UserCredential userCredential = await FirebaseAuth.instance
+                                  .createUserWithEmailAndPassword(
+                                email: email,
+                                password: passController.text.trim(),
+                              );
+
+                              // 8. Send verification email
+                              await userCredential.user?.sendEmailVerification();
+                              Fluttertoast.showToast(
+                                msg: "Verification email sent to $email",
+                                backgroundColor: Colors.blue,
+                                toastLength: Toast.LENGTH_LONG,
+                              );
+                              nameController.clear();
+                              surNameController.clear();
+                              emailController.clear();
+                              passController.clear();
+                              cpassController.clear();
+                              // 9. CORRECTED: Check verification status with reload
+                              await userCredential.user?.reload();
+                              final currentUser = FirebaseAuth.instance.currentUser;
+
+                              if (currentUser != null && currentUser.emailVerified) {
+                                Fluttertoast.showToast(
+                                  msg: "Email verified successfully!",
+                                  backgroundColor: Colors.green,
+                                );
+                                // Only navigate if you want to
+                                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => LoginPage()));
+                              } else {
+                                Fluttertoast.showToast(
+                                  msg: "Please check your email and click the verification link",
+
+                                  backgroundColor: Colors.orange,
+                                );
+                              }
+
+                            } on FirebaseAuthException catch (e) {
+                              Fluttertoast.showToast(
+                                msg: "Error: ${e.message ?? 'Authentication failed'}",
+                                backgroundColor: Colors.red,
+                              );
+                            } catch (e) {
+                              Fluttertoast.showToast(
+                                msg: "An error occurred: ${e.toString()}",
+                                backgroundColor: Colors.red,
+                              );
+                            } finally {
+                              setState(() => isLoading = false);
+                            }
                           },
-                          child: Column(
-                            children: [
-                              Text(
-                                "Sign Up",
-                                style: TextStyle(
-                                  fontSize: 19.0,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.indigo[900],
-                                ),
-                              ),
-                              Container(
-                                height: 3,
-                                width: 55,
-                                margin: const EdgeInsets.only(top: 5),
-                                color: Colors.orange[300],
-                              ),
-                            ],
+                          icon: isLoading
+                              ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
+                              : const Icon(Icons.check_circle),
+                          label: isLoading
+                              ? const Text("Processing...")
+                              : const Text("Register & Verify"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.indigo[800],
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            textStyle: const TextStyle(fontSize: 16),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-
-                    // Email TextField
-                    TextField(
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.person, color: Colors.indigo[900]),
-                        hintText: "Enter your name",
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-
-                      ),
-                      controller: nameController,
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.person, color: Colors.indigo[900]),
-                        hintText: "Enter your surname",
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-                      ),
-                      controller: surNameController,
-                    ),
-
-                    const SizedBox(height: 10),
-                    TextField(
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.email, color: Colors.indigo[900]),
-                        hintText: "Enter your email",
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-                      ),
-                      controller: emailController,
-                    ),
-                    SizedBox(height: 10,),
-                    TextField(
-                      controller: passController,
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-                        prefixIcon: Icon(Icons.lock,color: Colors.indigo[900],),
-                        hint: Text("Enter new password"),
-                      ),
-                    ),
-                    SizedBox(height: 10,),
-                    TextField(
-                      controller: cpassController,
-                     obscureText: true,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-                        prefixIcon: Icon(Icons.lock,color: Colors.indigo[900],),
-                        hint: Text("Confirm   password"),
-                      ),
-                    ),
-
-
-                    const SizedBox(height: 7),
-
-
-                    // Sign Up button
-                    ElevatedButton.icon(
-                      onPressed: isLoading
-                          ? null
-                          : () async {
-                        setState(() => isLoading = true);
-
-                        try {
-                          // 1. Form validations
-                          if (!verifyForm()) {
-                            Fluttertoast.showToast(msg: "All fields are required");
-                            setState(() => isLoading = false);
-                            return;
-                          }
-
-                          // 2. Password validation
-                          final String? passValidation = validatePass(passController.text.trim());
-                          if (passValidation != null) {
-                            Fluttertoast.showToast(msg: passValidation);
-                            setState(() => isLoading = false);
-                            return;
-                          }
-
-                          // 3. Email format validation
-                          if (!validInput()) {
-                            Fluttertoast.showToast(msg: "Please enter a valid email address");
-                            setState(() => isLoading = false);
-                            return;
-                          }
-
-                          // 4. Password match validation
-                          if (cpassController.text.trim() != passController.text.trim()) {
-                            Fluttertoast.showToast(msg: "Passwords do not match");
-                            setState(() => isLoading = false);
-                            return;
-                          }
-
-                          final email = emailController.text.trim();
-
-                          // 5. Space check validation
-                          if (!spaceCheck(nameController.text) ||
-                              !spaceCheck(surNameController.text) ||
-                              !spaceCheck(emailController.text)) {
-                            Fluttertoast.showToast(msg: "Spaces not allowed in name/surname/email");
-                            setState(() => isLoading = false);
-                            return;
-                          }
-
-                          // 6. Check if email already exists
-                          List<String> methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
-                          if (methods.isNotEmpty) {
-                            Fluttertoast.showToast(msg: "This email is already registered");
-                            setState(() => isLoading = false);
-                            return;
-                          }
-
-                          // 7. Create user if all validations pass
-                          UserCredential userCredential = await FirebaseAuth.instance
-                              .createUserWithEmailAndPassword(
-                            email: email,
-                            password: passController.text.trim(),
-                          );
-
-                          // 8. Send verification email
-                          await userCredential.user?.sendEmailVerification();
-                          Fluttertoast.showToast(
-                            msg: "Verification email sent to $email",
-                            backgroundColor: Colors.blue,
-                            toastLength: Toast.LENGTH_LONG,
-                          );
-                          nameController.clear();
-                          surNameController.clear();
-                          emailController.clear();
-                          passController.clear();
-                          cpassController.clear();
-                          // 9. CORRECTED: Check verification status with reload
-                          await userCredential.user?.reload();
-                          final currentUser = FirebaseAuth.instance.currentUser;
-
-                          if (currentUser != null && currentUser.emailVerified) {
-                            Fluttertoast.showToast(
-                              msg: "Email verified successfully!",
-                              backgroundColor: Colors.green,
-                            );
-                           // Only navigate if you want to
-                            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => LoginPage()));
-                          } else {
-                            Fluttertoast.showToast(
-                              msg: "Please check your email and click the verification link",
-
-                              backgroundColor: Colors.orange,
-                            );
-                          }
-
-                        } on FirebaseAuthException catch (e) {
-                          Fluttertoast.showToast(
-                            msg: "Error: ${e.message ?? 'Authentication failed'}",
-                            backgroundColor: Colors.red,
-                          );
-                        } catch (e) {
-                          Fluttertoast.showToast(
-                            msg: "An error occurred: ${e.toString()}",
-                            backgroundColor: Colors.red,
-                          );
-                        } finally {
-                          setState(() => isLoading = false);
-                        }
-                      },
-                      icon: isLoading
-                          ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          color: Colors.white,
-                        ),
-                      )
-                          : const Icon(Icons.check_circle),
-                      label: isLoading
-                          ? const Text("Processing...")
-                          : const Text("Register & Verify"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.indigo[800],
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        textStyle: const TextStyle(fontSize: 16),
-                      ),
-                    ),
-
-
-
-                  ],
+                  ),
                 ),
               ),
             ),
-
-
-
           ],
-
         ),
       ),
     );
   }
+
 }
 
 class ForgotPasswordPage extends StatefulWidget {
@@ -926,7 +973,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               height: double.infinity,
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage("images/background.jpg"),
+                  image: AssetImage("images/background1.jpg"),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -937,17 +984,20 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Change Password",
+                    "Reset Page",
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 29,
+                      color: Colors.grey[400],
+                      fontSize: 35,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   SizedBox(height: 30),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
                   Center(
                     child: Container(
-                      height: 200,
+                      height: 250,
                       padding: EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Colors.grey[200],
@@ -1016,6 +1066,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       ),
                     ),
                   ),
+        ],
+            ),
                 ],
               ),
             ),
