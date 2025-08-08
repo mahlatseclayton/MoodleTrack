@@ -218,7 +218,7 @@ class _LoginPageState extends State<LoginPage> {
       // Login successful - navigate to home
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => Homepage()),
+        MaterialPageRoute(builder: (context) => mainPage()),
       );
 
     } on FirebaseAuthException catch (e) {
@@ -408,7 +408,7 @@ class _LoginPageState extends State<LoginPage> {
                             onTap: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (_) => forgotPassWordPage()),
+                                MaterialPageRoute(builder: (_) => ForgotPasswordPage()),
                               );
                             },
                             child: Text(
@@ -866,231 +866,185 @@ bool spaceCheck(String x){
   }
 }
 
-class forgotPassWordPage extends StatefulWidget {
-  const forgotPassWordPage({super.key});
-
+class ForgotPasswordPage extends StatefulWidget {
   @override
-  State<forgotPassWordPage> createState() => _forgotPassWordPageState();
+  _ForgotPasswordPageState createState() => _ForgotPasswordPageState();
 }
 
-class _forgotPassWordPageState extends State<forgotPassWordPage> {
+class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
+  final _formKey = GlobalKey<FormState>();
+  bool isLoading = false;
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwController = TextEditingController();
+  final TextEditingController cpasswController = TextEditingController();
+
+  Future<void> _sendPasswordResetEmail() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => isLoading = true);
+
+    try {
+      final email = emailController.text.trim();
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+
+      Fluttertoast.showToast(
+        msg: "Password reset email sent. Please check your inbox.",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+      );
+     emailController.clear();
+      Navigator.pop(context);
+    } on FirebaseAuthException catch (e) {
+      String message;
+      switch (e.code) {
+        case 'user-not-found':
+          message = 'No user found with this email.';
+          break;
+        case 'invalid-email':
+          message = 'The email address is not valid.';
+          break;
+        default:
+          message = 'Failed to send reset email: ${e.message}';
+      }
+      Fluttertoast.showToast(msg: message);
+    } catch (e) {
+      Fluttertoast.showToast(msg: 'Error: ${e.toString()}');
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
   @override
-  final TextEditingController emailController= TextEditingController();
-  final TextEditingController  vCode= TextEditingController();
-  final TextEditingController passwController= TextEditingController();
-  final TextEditingController cpasswController= TextEditingController();
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[600],
       body: SafeArea(
-        child:Stack(
+        child: Stack(
           children: [
             Container(
               width: double.infinity,
               height: double.infinity,
-              decoration:BoxDecoration(
-                image:DecorationImage(image:AssetImage("images/background.jpg"),
-                    fit: BoxFit.cover),
-
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage("images/background.jpg"),
+                  fit: BoxFit.cover,
+                ),
               ),
-
             ),
-            Text("Change Password",style:TextStyle(
-              color: Colors.white,
-              fontSize: 29,
-              fontWeight: FontWeight.bold,
-
-            ),
-            ),
-
-
-
-            Center(
-              child:  Container(
-                height:320,
-                margin: EdgeInsets.all(30),
-
-
-                padding: EdgeInsets.all(12),
-
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow:[
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 10,
-                      spreadRadius: 3,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Change Password",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 29,
+                      fontWeight: FontWeight.bold,
                     ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    SizedBox(height: 10),
-                    TextField(
-
-                      controller: emailController,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-                        prefixIcon: Icon(Icons.email,color: Colors.indigo[900],),
-                        hint: Text("Enter your email"),
+                  ),
+                  SizedBox(height: 30),
+                  Center(
+                    child: Container(
+                      height: 200,
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 10,
+                            spreadRadius: 3,
+                          ),
+                        ],
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            TextFormField(
+                              controller: emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(15)),
+                                prefixIcon: Icon(Icons.email, color: Colors.indigo[900]),
+                                hintText: "Enter your email",
+                              ),
+                              validator: (value) {
+                                if (value == null ||
+                                    value.isEmpty ||
+                                    !value.contains('@')) {
+                                  return 'Please enter a valid email';
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: 12),
+                            ElevatedButton.icon(
+                              onPressed: isLoading ? null : _sendPasswordResetEmail,
+                              icon: isLoading
+                                  ? SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                                  : Icon(Icons.security),
+                              label: Text(isLoading ? "Sending..." : "Send Reset Email"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.indigo[900],
+                                foregroundColor: Colors.grey[300],
+                                textStyle: TextStyle(fontSize: 18),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 18, vertical: 12),
+                              ),
+                            ),
+                            // Optional: keep these fields but disabled with explanation
+                            SizedBox(height: 20),
+                            Text(
+                              "You will receive an email to reset your password.\nPlease check your inbox.",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.black54),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    SizedBox(height: 10),
-                    TextField(
-                      controller: vCode,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-                        prefixIcon: Icon(Icons.security,color: Colors.indigo[900],),
-                        hint: Text("Enter verification code"),
-                      ),
-                    ),
-                    SizedBox(height: 10,),
-                    TextField(
-                      controller: passwController,
-
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-                        prefixIcon: Icon(Icons.lock,color: Colors.indigo[900],),
-                        hint: Text("Enter new password"),
-                      ),
-                    ),
-                    SizedBox(height: 10,),
-                    TextField(
-                      controller: cpasswController,
-
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-                        prefixIcon: Icon(Icons.lock,color: Colors.indigo[900],),
-                        hint: Text("Confirm   password"),
-                      ),
-                    ),
-
-                    SizedBox(height: 12),
-                    ElevatedButton.icon(
-                      onPressed:(){
-
-                      },
-                      label: Text("Verify"),
-                      icon: Icon(Icons.confirmation_num),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.indigo[900],
-                        foregroundColor: Colors.grey[300],
-                        textStyle: const TextStyle(fontSize: 18),
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
-
     );
   }
 }
 
-// class verifyPassWord extends StatefulWidget {
-//
-//   final String? name;
-//   final String? surname;
-//   final String? email;
-//
-//
-//   const verifyPassWord({
-//     super.key,
-//     required this.name,
-//     required this.surname,
-//     required this.email,
-//
-//   });
-//
-//   @override
-//   State<verifyPassWord> createState() => _verifyPassWordState();
-// }
-//
-// class _verifyPassWordState extends State<verifyPassWord> {
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.grey[600],
-//       body: SafeArea(
-//         child:Stack(
-//           children: [
-//             Container(
-//               width: double.infinity,
-//               height: double.infinity,
-//               decoration:BoxDecoration(
-//                 image:DecorationImage(image:AssetImage("images/background.jpg"),
-//                     fit: BoxFit.cover),
-//
-//               ),
-//
-//             ),
-//             Text("Verify Account",style:TextStyle(
-//               color: Colors.white,
-//               fontSize: 29,
-//               fontWeight: FontWeight.bold,
-//
-//             ),
-//             ),
-//
-//
-//
-//             Center(
-//               child:  Container(
-//                 height:150,
-//                 margin: EdgeInsets.all(30),
-//
-//
-//                 padding: EdgeInsets.all(12),
-//
-//                 decoration: BoxDecoration(
-//                   color: Colors.grey[200],
-//                   borderRadius: BorderRadius.circular(30),
-//                   boxShadow:[
-//                     BoxShadow(
-//                       color: Colors.black.withOpacity(0.3),
-//                       blurRadius: 10,
-//                       spreadRadius: 3,
-//                     ),
-//                   ],
-//                 ),
-//                 child: Column(
-//                   children: [
-//
-//
-//                     SizedBox(height: 12),
-//                     ElevatedButton.icon(
-//                       onPressed:(){
-//
-//                       },
-//                       label: Text("Verify"),
-//                       icon: Icon(Icons.confirmation_num),
-//                       style: ElevatedButton.styleFrom(
-//                         backgroundColor: Colors.indigo[900],
-//                         foregroundColor: Colors.grey[300],
-//                         textStyle: const TextStyle(fontSize: 18),
-//                         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//
-//     );
-//
-//
-//   }
-// }
+class mainPage extends StatefulWidget {
+  const mainPage({super.key});
+
+  @override
+  State<mainPage> createState() => _mainPageState();
+}
+
+class _mainPageState extends State<mainPage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body:Text("Welcome to the main page,",style: TextStyle(
+        fontSize: 40,
+      ),)
+    );
+  }
+}
+
+
 
 
 
