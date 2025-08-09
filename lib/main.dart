@@ -218,7 +218,7 @@ class _LoginPageState extends State<LoginPage> {
       // Login successful - navigate to home
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => mainPage()),
+        MaterialPageRoute(builder: (context) => MainPage()),
       );
 
     } on FirebaseAuthException catch (e) {
@@ -1078,23 +1078,57 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   }
 }
 
-class mainPage extends StatefulWidget {
-  const mainPage({super.key});
+class MainPage extends StatefulWidget {
+  const MainPage({super.key});
 
   @override
-  State<mainPage> createState() => _mainPageState();
+  State<MainPage> createState() => _MainPageState();
 }
 
-class _mainPageState extends State<mainPage> {
+class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body:Text("Welcome to the main page,",style: TextStyle(
-        fontSize: 40,
-      ),)
+      appBar: AppBar(
+        backgroundColor: Colors.indigo[900],
+        title: Text("Home",style:TextStyle(fontWeight: FontWeight.bold)),
+      ),
+
+      body: SafeArea(
+        child: Container(
+          height: double.infinity,
+          width: double.infinity,
+          color: Colors.grey[200],
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Flexible(
+                    child: TextField(
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        hintText: "Write your post/question here", // fixed
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 3),
+                  ElevatedButton.icon(
+                    onPressed: () {},
+                    icon: Icon(Icons.masks, color: Colors.indigo[900]),
+                    label: const Text(""),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
+
 
 
 
