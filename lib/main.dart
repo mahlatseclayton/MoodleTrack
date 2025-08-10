@@ -466,8 +466,6 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
-
-
   final _auth = FirebaseAuth.instance;
   bool isLoading = false;
   bool isSignUp = true;
@@ -487,8 +485,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
       fontSize: 16,
     );
   }
-
-
   bool verifyForm(){
     if(nameController.text.isEmpty||passController.text.isEmpty ||cpassController.text.isEmpty|| surNameController.text.isEmpty||emailController.text.isEmpty){
       return false;
@@ -631,15 +627,15 @@ bool spaceCheck(String x){
               ),
             ),
 
-            // Form container, scrollable, centered horizontally and positioned below title
+
             Positioned.fill(
-              top: 220, // pushes container below the title text nicely
+              top: 220,
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 25),
                 child: Center(
                   child: Container(
                     constraints: const BoxConstraints(
-                      maxWidth: 500, // optional max width for bigger screens
+                      maxWidth: 500,
                     ),
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -663,7 +659,7 @@ bool spaceCheck(String x){
                             GestureDetector(
                               onTap: () {
                                 isSignUp = false;
-                                Navigator.pop(context);
+                               Navigator.push(context, MaterialPageRoute(builder: (_)=>LoginPage()));
                               },
                               child: Column(
                                 children: [
@@ -1103,7 +1099,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     );
   }
 }
-
+//mentee home page
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
 
@@ -1134,19 +1130,43 @@ class _MainPageState extends State<MainPage> {
         unselectedItemColor: Colors.white.withOpacity(.35),
         selectedFontSize: 14,
         unselectedFontSize: 14,
-        onTap: (value) {},
+        onTap: (value) {
+          if(value==0){
+            //tasks
+            Navigator.push(context, MaterialPageRoute(builder: (_)=>TasksPage()));
+          }
+          else if(value==1){
+            //meetings
+            Navigator.push(context, MaterialPageRoute(builder: (_)=>MeetingsPage()));
+          }
+          else if(value==2){
+            // helpline
+            Navigator.push(context, MaterialPageRoute(builder: (_)=>HelpPage()));
+          }
+        },
         items: [
           BottomNavigationBarItem(
+
             label: 'Tasks',
-            icon: Icon(Icons.alarm, color: Colors.indigo[900]),
+
+            icon:Badge(
+              backgroundColor: Colors.red,
+              label: Text("15",style: TextStyle(color:Colors.white),),
+              child: Icon(Icons.alarm, color: Colors.indigo[900]),
+
+            ),
           ),
           BottomNavigationBarItem(
-            label: 'Meetings',
-            icon: Icon(Icons.group, color: Colors.indigo[900]),
+            label: 'Announcements',
+            backgroundColor: Colors.red,
+            icon: Badge(
+              label: Text("2",style:TextStyle(color:Colors.white)),
+              child: Icon(Icons.group, color: Colors.indigo[900]),
+            ),
           ),
           BottomNavigationBarItem(
-            label: 'Chats',
-            icon: Icon(Icons.message, color: Colors.indigo[900]),
+            label: 'HelpLine',
+            icon: Icon(Icons.help, color: Colors.indigo[900]),
           ),
         ],
       ),
@@ -1199,6 +1219,14 @@ class _MainPageState extends State<MainPage> {
                     children: [
                       GestureDetector(
                         onTap: () => setState(() => isPost = true),
+                        onDoubleTap:(){
+                          setState(() {
+                            if(isPost){
+                              Fluttertoast.showToast(msg: "post aploaded");
+                            }
+
+                          });
+                        },
                         child: Container(
                           width: 90,
                           height: 40,
@@ -1217,6 +1245,14 @@ class _MainPageState extends State<MainPage> {
                       ),
                       GestureDetector(
                         onTap: () => setState(() => isPost = false),
+                        onDoubleTap:(){
+                          setState(() {
+                            if(!isPost) {
+                              Fluttertoast.showToast(
+                                  msg: " Anony post aploaded");
+                            };
+                          });
+                        },
                         child: Container(
                           width: 130,
                           height: 40,
@@ -1249,7 +1285,7 @@ class _MainPageState extends State<MainPage> {
                       margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: Colors.grey[200],
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
@@ -1339,8 +1375,151 @@ class _MainPageState extends State<MainPage> {
     );
   }
 }
+class TasksPage extends StatefulWidget {
+  const TasksPage({super.key});
+
+  @override
+  State<TasksPage> createState() => _TasksPageState();
+}
+
+class _TasksPageState extends State<TasksPage> {
+  @override
+  List<String>tasks=["mathematics","physics","geography","mathematics","physics","geography","mathematics","physics","geography"];
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.grey[500],
+        title: Text("Tasks",style:TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),),
+
+      ),
+      body:Expanded(
+        child: ListView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          itemCount: tasks.length,
+          itemBuilder: (context, index) {
+            return Container(
+              margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(tasks[index],style: TextStyle(
+                        color:Colors.indigo[800],
+                        fontSize:19,
+                        fontWeight: FontWeight.bold,
+                      ),),
+                      ElevatedButton.icon(onPressed: (){
+
+                      },
+                       label:Text("Mark as done"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[200],
+                        ),
+                        icon:IconButton(onPressed: (){}, icon: Icon(Icons.delete,color: Colors.indigo[900],)),
+                      ),
+
+                    ],
+                  ),
+                  SizedBox(height:6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        // child: Text(
+                        //   tasks[index],
+                        //   style: TextStyle(
+                        //     fontSize: 16,
+                        //
+                        //   ),
+                        // ),
+                        child: Container(
+                          child: Column(
+                            children: [
+                              Text("TaskType"),
+                              SizedBox(height: 4,),
+                              Text("Opened: "+"Wednesday ,7 August 2025 11:59 PM"),
+                              SizedBox(height:4),
+                              Text("Due: "+"Wednesday ,7 August 2025 11:59 PM",style: TextStyle(color: Colors.red,fontWeight: FontWeight.bold),),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                    ],
+                  ),
+                  SizedBox(height: 8),
+
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class MeetingsPage extends StatefulWidget {
+  const MeetingsPage({super.key});
+
+  @override
+  State<MeetingsPage> createState() => _MeetingsPageState();
+}
+
+class _MeetingsPageState extends State<MeetingsPage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.grey[500],
+        title: Text("Announcements",style:TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),),
+      ),
+    );
+  }
+}
 
 
+class HelpPage extends StatefulWidget {
+  const HelpPage({super.key});
+
+  @override
+  State<HelpPage> createState() => _HelpPageState();
+}
+
+class _HelpPageState extends State<HelpPage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.grey[500],
+        title: Text("HelpLine",style:TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),),
+      ),
+    );
+  }
+}
 
 
 
