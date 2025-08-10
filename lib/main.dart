@@ -70,7 +70,7 @@ class _HomepageState extends State<Homepage> {
               width: double.infinity,
               height: 300,
               decoration:BoxDecoration(
-                // color: (Colors.purple[900] ?? Colors.purple[900])!.withOpacity(.),
+                color: (Colors.grey[900] ?? Colors.grey[900])!.withOpacity(.65),
               ),
             ),
           ),
@@ -249,6 +249,13 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+          backgroundColor: Colors.grey[500],
+          title:Text("Login Page",style:TextStyle(
+            color:Colors.white,
+            fontWeight: FontWeight.bold,
+          ))
+      ),
       backgroundColor: Colors.grey[600],
       body: SafeArea(
         child: Stack(
@@ -262,19 +269,13 @@ class _LoginPageState extends State<LoginPage> {
                   fit: BoxFit.cover,
                 ),
               ),
-            ),
-            Positioned(
-              top: 20,
-              left: 20,
-              child: Text(
-                "Login",
-                style: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 29,
-                  fontWeight: FontWeight.bold,
-                ),
+              child:Container(
+                width: double.infinity,
+                height: double.infinity,
+                color: (Colors.grey[900] ?? Colors.grey[900])!.withOpacity(.65),
               ),
             ),
+
             Center(
               child: SingleChildScrollView(
                 child: Container(
@@ -465,6 +466,8 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
+
+
   final _auth = FirebaseAuth.instance;
   bool isLoading = false;
   bool isSignUp = true;
@@ -563,6 +566,13 @@ bool spaceCheck(String x){
 
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.grey[500],
+        title:Text("Sign Up Page",style:TextStyle(
+          color:Colors.white,
+          fontWeight: FontWeight.bold,
+        ))
+      ),
       backgroundColor: Colors.grey[600],
       body: SafeArea(
         child: Stack(
@@ -577,7 +587,13 @@ bool spaceCheck(String x){
                   fit: BoxFit.cover,
                 ),
               ),
+              child:Container(
+                width: double.infinity,
+                height: double.infinity,
+                color: (Colors.grey[900] ?? Colors.grey[900])!.withOpacity(.65),
+              ),
             ),
+
 
             // Top title text, centered horizontally, positioned near top with padding
             Positioned(
@@ -964,6 +980,17 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
+      appBar:AppBar(
+        backgroundColor: Colors.grey[500],
+        title: Text(
+          "Reset Page",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
       backgroundColor: Colors.grey[600],
       body: SafeArea(
         child: Stack(
@@ -976,6 +1003,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   image: AssetImage("images/background1.jpg"),
                   fit: BoxFit.cover,
                 ),
+
+              ),
+              child:Container(
+                width: double.infinity,
+                height: double.infinity,
+                color: (Colors.grey[900] ?? Colors.grey[900])!.withOpacity(.65),
               ),
             ),
             Padding(
@@ -983,14 +1016,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "Reset Page",
-                    style: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 35,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+
                   SizedBox(height: 30),
                   Column(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1084,42 +1110,227 @@ class MainPage extends StatefulWidget {
   @override
   State<MainPage> createState() => _MainPageState();
 }
-
 class _MainPageState extends State<MainPage> {
+  bool isPost = true;
+  List<String> posts = [
+    'hello my name is Mahlatse and I am your mentor for the year 2025🥵🥵🥵🥵', "hi", "type",
+    'hello', "hi", "type",
+    'hello', "hi", "type",
+    'hello', "hi", "type",
+    'hello', "hi", "type",
+    'hello', "hi", "type",
+    'hello', "hi", "type",
+    'hello', "hi", "type",
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.indigo[900],
-        title: Text("Home",style:TextStyle(fontWeight: FontWeight.bold)),
+      resizeToAvoidBottomInset: true,
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.grey[500],
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.white.withOpacity(.35),
+        selectedFontSize: 14,
+        unselectedFontSize: 14,
+        onTap: (value) {},
+        items: [
+          BottomNavigationBarItem(
+            label: 'Tasks',
+            icon: Icon(Icons.alarm, color: Colors.indigo[900]),
+          ),
+          BottomNavigationBarItem(
+            label: 'Meetings',
+            icon: Icon(Icons.group, color: Colors.indigo[900]),
+          ),
+          BottomNavigationBarItem(
+            label: 'Chats',
+            icon: Icon(Icons.message, color: Colors.indigo[900]),
+          ),
+        ],
       ),
-
+      appBar: AppBar(
+        backgroundColor: Colors.grey[500],
+        title: Text(
+          "Home",
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+      ),
       body: SafeArea(
+        bottom: false,
         child: Container(
-          height: double.infinity,
-          width: double.infinity,
           color: Colors.grey[200],
           child: Column(
             children: [
-              Row(
-                children: [
-                  Flexible(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
+              // Header Section
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        textAlign: TextAlign.center,
+                        decoration: InputDecoration(
+                          hintText: "Write your post/question here",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
                         ),
-                        hintText: "Write your post/question here", // fixed
                       ),
                     ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // Post Type Selector
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[500],
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  const SizedBox(width: 3),
-                  ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: Icon(Icons.masks, color: Colors.indigo[900]),
-                    label: const Text(""),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      GestureDetector(
+                        onTap: () => setState(() => isPost = true),
+                        child: Container(
+                          width: 90,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            color: isPost ? Colors.blue : Colors.grey[500],
+                          ),
+                          child: Align(
+                            alignment: Alignment.center,
+                            child: Text(
+                              "Post",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => setState(() => isPost = false),
+                        child: Container(
+                          width: 130,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            color: isPost ? Colors.grey[500] : Colors.blue,
+                          ),
+                          child: Align(
+                            alignment: Alignment.center,
+                            child: Text(
+                              "Post Anonymously",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
+              ),
+              const SizedBox(height: 15),
+
+              // Main Content Area - Scrollable ListView
+              Expanded(
+                child: ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  itemCount: posts.length,
+                  itemBuilder: (context, index) {
+                    return Container(
+                      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text("Username",style: TextStyle(
+                                color:Colors.indigo[800],
+                                fontSize:19,
+                                fontWeight: FontWeight.bold,
+                              ),),
+                              IconButton(onPressed: (){}, icon: Icon(Icons.delete,color: Colors.indigo[900],))
+                            ],
+                          ),
+                         
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  posts[index],
+                                  style: TextStyle(
+                                    fontSize: 16,
+
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () {
+                                  
+                                },
+                                icon: Icon(Icons.favorite_border, color: Colors.red),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 8),
+
+                          // Reply section: TextField + Comment button
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  decoration: InputDecoration(
+                                    hintText: "Reply..",
+                                    isDense: true,
+                                    contentPadding:
+                                    EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  // TODO: Implement comment action
+                                },
+                                icon: Icon(Icons.comment, size: 18),
+                                label: Text("Comment"),
+                                style: ElevatedButton.styleFrom(
+                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  textStyle: TextStyle(fontSize: 14),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -1128,6 +1339,8 @@ class _MainPageState extends State<MainPage> {
     );
   }
 }
+
+
 
 
 
