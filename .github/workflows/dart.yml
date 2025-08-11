@@ -14,8 +14,21 @@ jobs:
         with:
           channel: 'stable'
           architecture: x64
+
       - run: flutter pub get
-      
+
+      # ✅ Ensure Podfile exists and set iOS target to 13.0
+      - name: Prepare iOS Podfile
+        run: |
+          cd ios
+          if [ ! -f Podfile ]; then
+            pod init
+          fi
+          if grep -q "platform :ios" Podfile; then
+            sed -i '' "s/platform :ios, '.*'/platform :ios, '13.0'/" Podfile
+          else
+            echo "platform :ios, '13.0'" | cat - Podfile > temp && mv temp Podfile
+          fi
 
       - run: pod repo update
         working-directory: ios
