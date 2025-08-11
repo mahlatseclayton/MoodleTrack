@@ -17,9 +17,10 @@ jobs:
 
       - run: flutter pub get
 
-      # ✅ Create or update Podfile before any pod commands
-      - name: Prepare iOS Podfile
+      # Update iOS deployment target in multiple places
+      - name: Set iOS deployment target to 13.0
         run: |
+          # Update Podfile
           cd ios
           if [ ! -f Podfile ]; then
             pod init
@@ -29,11 +30,17 @@ jobs:
           else
             echo "platform :ios, '13.0'" | cat - Podfile > temp && mv temp Podfile
           fi
+          
+          # Update project.pbxproj
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [^;]*;/IPHONEOS_DEPLOYMENT_TARGET = 13.0;/g' Runner.xcodeproj/project.pbxproj
+          
+          # Update Info.plist if needed
+          plutil -replace MinimumOSVersion -string "13.0" Runner/Info.plist
 
-      # ✅ Install pods after target is set to 13.0
+      # Install pods
       - run: pod repo update
         working-directory: ios
-      - run: pod install
+      - run: pod install --repo-update
         working-directory: ios
 
       # Build iOS release
