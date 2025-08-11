@@ -17,7 +17,7 @@ jobs:
 
       - run: flutter pub get
 
-      # ✅ Ensure Podfile exists and set iOS target to 13.0
+      # ✅ Create or update Podfile before any pod commands
       - name: Prepare iOS Podfile
         run: |
           cd ios
@@ -30,9 +30,13 @@ jobs:
             echo "platform :ios, '13.0'" | cat - Podfile > temp && mv temp Podfile
           fi
 
+      # ✅ Install pods after target is set to 13.0
       - run: pod repo update
         working-directory: ios
+      - run: pod install
+        working-directory: ios
 
+      # Build iOS release
       - run: flutter build ios --release --no-codesign
 
       - run: mkdir Payload
