@@ -1111,6 +1111,7 @@ class MainPage extends StatefulWidget {
 }
 class _MainPageState extends State<MainPage> {
   bool isPost = true;
+
   Future<void> hidePostForUser(String postId) async {
     final userId = FirebaseAuth.instance.currentUser!.uid;
     final userRef = FirebaseFirestore.instance.collection('users').doc(userId);
@@ -1120,7 +1121,8 @@ class _MainPageState extends State<MainPage> {
     });
   }
 
-  final TextEditingController postController=TextEditingController();
+  final TextEditingController postController = TextEditingController();
+
   Future<void> uploadPost(String type, bool showRealUsername) async {
     try {
       final userId = FirebaseAuth.instance.currentUser!.uid;
@@ -1135,7 +1137,7 @@ class _MainPageState extends State<MainPage> {
 
       final realUserName = userDoc.data()?['fullName'] ?? 'Unknown';
       final surName = userDoc.data()?['surName'] ?? 'Unknown';
-     final username=realUserName+" "+surName;
+      final username = realUserName + " " + surName;
 
       // Decide username based on the boolean flag
       final displayUserName = showRealUsername ? username : 'Anonymous ******';
@@ -1146,12 +1148,34 @@ class _MainPageState extends State<MainPage> {
         'userId': userId,
         'userName': displayUserName,
         'text': postText,
+        'like': 0,
+        'likedBy': [], // Added array to track users who liked the post
         'timestamp': FieldValue.serverTimestamp(),
       });
 
       Fluttertoast.showToast(msg: '$type uploaded');
     } catch (e) {
       Fluttertoast.showToast(msg: "Failed: $e");
+    }
+  }
+
+  // EDITED THIS FUNCTION TO PROPERLY HANDLE LIKES PER USER
+  Future<void> addLike(String postId, List<dynamic> currentLikedBy) async {
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+    final postRef = FirebaseFirestore.instance.collection('posts').doc(postId);
+
+    if (currentLikedBy.contains(userId)) {
+      // User already liked - unlike it
+      await postRef.update({
+        'like': FieldValue.increment(-1),
+        'likedBy': FieldValue.arrayRemove([userId]),
+      });
+    } else {
+      // User hasn't liked - add like
+      await postRef.update({
+        'like': FieldValue.increment(1),
+        'likedBy': FieldValue.arrayUnion([userId]),
+      });
     }
   }
 
@@ -1167,36 +1191,31 @@ class _MainPageState extends State<MainPage> {
         selectedFontSize: 14,
         unselectedFontSize: 14,
         onTap: (value) {
-          if(value==0){
+          if (value == 0) {
             //tasks
-            Navigator.push(context, MaterialPageRoute(builder: (_)=>TasksPage()));
-          }
-          else if(value==1){
+            Navigator.push(context, MaterialPageRoute(builder: (_) => TasksPage()));
+          } else if (value == 1) {
             //meetings
-            Navigator.push(context, MaterialPageRoute(builder: (_)=>MeetingsPage()));
-          }
-          else if(value==2){
+            Navigator.push(context, MaterialPageRoute(builder: (_) => MeetingsPage()));
+          } else if (value == 2) {
             // helpline
-            Navigator.push(context, MaterialPageRoute(builder: (_)=>HelpPage()));
+            Navigator.push(context, MaterialPageRoute(builder: (_) => HelpPage()));
           }
         },
         items: [
           BottomNavigationBarItem(
-
             label: 'Tasks',
-
-            icon:Badge(
+            icon: Badge(
               backgroundColor: Colors.red,
-              label: Text("15",style: TextStyle(color:Colors.white),),
+              label: Text("15", style: TextStyle(color: Colors.white)),
               child: Icon(Icons.alarm, color: Colors.indigo[900]),
-
             ),
           ),
           BottomNavigationBarItem(
             label: 'Announcements',
             backgroundColor: Colors.red,
             icon: Badge(
-              label: Text("2",style:TextStyle(color:Colors.white)),
+              label: Text("2", style: TextStyle(color: Colors.white)),
               child: Icon(Icons.group, color: Colors.indigo[900]),
             ),
           ),
@@ -1226,7 +1245,7 @@ class _MainPageState extends State<MainPage> {
                   children: [
                     Expanded(
                       child: TextField(
-                        controller:postController,
+                        controller: postController,
                         textAlign: TextAlign.center,
                         decoration: InputDecoration(
                           hintText: "Write your post/question here",
@@ -1255,18 +1274,16 @@ class _MainPageState extends State<MainPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       GestureDetector(
-
                         onTap: () => setState(() => isPost = true),
-                        onDoubleTap:(){
+                        onDoubleTap: () {
                           setState(() {
-                            if(isPost){
-                              if(postController.text.isEmpty || postController.text==""){
+                            if (isPost) {
+                              if (postController.text.isEmpty || postController.text == "") {
                                 Fluttertoast.showToast(msg: "Post can not be empty");
                                 return;
                               }
-                                uploadPost("Post",true);
+                              uploadPost("Post", true);
                             }
-
                           });
                         },
                         child: Container(
@@ -1287,15 +1304,15 @@ class _MainPageState extends State<MainPage> {
                       ),
                       GestureDetector(
                         onTap: () => setState(() => isPost = false),
-                        onDoubleTap:(){
+                        onDoubleTap: () {
                           setState(() {
-                            if(!isPost) {
-                              if(postController.text.isEmpty || postController.text==""){
+                            if (!isPost) {
+                              if (postController.text.isEmpty || postController.text == "") {
                                 Fluttertoast.showToast(msg: "Post can not be empty");
                                 return;
                               }
-                              uploadPost("Anonymous Post",false);
-                            };
+                              uploadPost("Anonymous Post", false);
+                            }
                           });
                         },
                         child: Container(
@@ -1336,6 +1353,7 @@ class _MainPageState extends State<MainPage> {
                     }
 
                     final docs = snapshot.data!.docs;
+                    final currentUserId = FirebaseAuth.instance.currentUser!.uid;
 
                     return ListView.builder(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -1343,11 +1361,13 @@ class _MainPageState extends State<MainPage> {
                       itemBuilder: (context, index) {
                         // Extract data from Firestore doc
                         final postData = docs[index].data() as Map<String, dynamic>;
-                        final currentUserId = FirebaseAuth.instance.currentUser!.uid;
                         final postUserId = postData['userId'];
                         final username = (postUserId == currentUserId) ? "You" : (postData['userName'] ?? 'Unknown user');
                         final text = postData['text'] ?? '';
-                        // Add more fields if you have likes, comments, timestamps, etc.
+                        final postId = docs[index].id;
+                        final postLike = postData['like'] ?? 0;
+                        final likedBy = List<String>.from(postData['likedBy'] ?? []);
+                        final isLiked = likedBy.contains(currentUserId); // EDITED: Check if current user liked the post
 
                         return Container(
                           margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
@@ -1380,20 +1400,15 @@ class _MainPageState extends State<MainPage> {
                                   ),
                                   IconButton(
                                     onPressed: () {
-                                      final currentUserId = FirebaseAuth.instance.currentUser!.uid;
-                                      final postUserId = postData['userId'];
-                                    if(currentUserId==postUserId){
-                                      FirebaseFirestore.instance
-                                          .collection('posts')
-                                          .doc(docs[index].id)
-                                          .delete();
-                                      Fluttertoast.showToast(msg: "Post deleted.");
-                                    }
-                                    else{
-                                      // hidePostForUser(docs[index].id);
-                                      Fluttertoast.showToast(msg: "Allowed to delete personal posts only.");
-                                    }
-
+                                      if (currentUserId == postUserId) {
+                                        FirebaseFirestore.instance
+                                            .collection('posts')
+                                            .doc(docs[index].id)
+                                            .delete();
+                                        Fluttertoast.showToast(msg: "Post deleted.");
+                                      } else {
+                                        Fluttertoast.showToast(msg: "Allowed to delete personal posts only.");
+                                      }
                                     },
                                     icon: Icon(Icons.delete, color: Colors.indigo[900]),
                                   ),
@@ -1412,9 +1427,14 @@ class _MainPageState extends State<MainPage> {
                                   ),
                                   IconButton(
                                     onPressed: () {
-                                      // TODO: Implement favorite/like action
+                                      addLike(postId, likedBy);
                                     },
-                                    icon: Icon(Icons.favorite_border, color: Colors.red),
+                                    icon: Badge(
+                                      label: Text(postLike.toString(), style: TextStyle(color: Colors.white)),
+                                      child: Icon(
+                                          isLiked ? Icons.favorite : Icons.favorite_border,
+                                          color: isLiked ? Colors.red : Colors.grey),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -1435,7 +1455,6 @@ class _MainPageState extends State<MainPage> {
                                           borderRadius: BorderRadius.circular(15),
                                         ),
                                       ),
-                                      // Optionally add controller to capture reply text
                                     ),
                                   ),
                                   const SizedBox(width: 8),
@@ -1461,7 +1480,6 @@ class _MainPageState extends State<MainPage> {
                   },
                 ),
               ),
-
             ],
           ),
         ),
