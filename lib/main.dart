@@ -531,34 +531,23 @@ bool spaceCheck(String x){
     }
     return true;
 }
-  Future<bool> registerUser(String email, String password, String fullName,String schoolName,String surname) async {
-    try {
-      // Create user in Firebase Auth
-      UserCredential cred = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(email: email, password: password);
-
-      // Send email verification
-      await cred.user!.sendEmailVerification();
-
-      // Save user to Firestore with isVerified = false
-      await FirebaseFirestore.instance.collection('users').doc(cred.user!.uid).set({
-        'uid': cred.user!.uid,
-        'email': email,
-        'fullName': fullName,
-        'surName':surname,
-        'schoolName':schoolName,
-        'isVerified': false,
-        'createdAt': Timestamp.now(),
-      });
-
-      print('success');
-      return true;
-    } catch (e) {
-      print('Registration failed: $e');
-
-      return false;
-    }
+  Future<void> registerUser({
+    required String uid,
+    required String email,
+    required String fullName,
+    required String surName,
+  }) async {
+    await FirebaseFirestore.instance.collection('users').doc(uid).set({
+      'uid': uid,
+      'email': email,
+      'fullName': fullName,
+      'surName': surName,
+      'isVerified': false,
+      'createdAt': Timestamp.now(),
+    });
   }
+
+
 
   Widget build(BuildContext context) {
     return Scaffold(
@@ -784,134 +773,148 @@ bool spaceCheck(String x){
                         const SizedBox(height: 20),
 
                         // Register & Verify button
-                        ElevatedButton.icon(
-                          onPressed: isLoading
-                              ? null
-                              : () async {
-                            setState(() => isLoading = true);
+                    // Register & Verify button
+                    ElevatedButton.icon(
+                      onPressed: isLoading
+                          ? null
+                          : () async {
+                        setState(() => isLoading = true);
 
-                            try {
-                              // 1. Form validations
-                              if (!verifyForm()) {
-                                Fluttertoast.showToast(msg: "All fields are required");
-                                setState(() => isLoading = false);
-                                return;
-                              }
+                        try {
+                          // 1. Form validations
+                          if (!verifyForm()) {
+                            Fluttertoast.showToast(msg: "All fields are required");
+                            setState(() => isLoading = false);
+                            return;
+                          }
 
-                              // 2. Password validation
-                              final String? passValidation = validatePass(passController.text.trim());
-                              if (passValidation != null) {
-                                Fluttertoast.showToast(msg: passValidation);
-                                setState(() => isLoading = false);
-                                return;
-                              }
+                          // 2. Password validation
+                          final String? passValidation = validatePass(passController.text.trim());
+                          if (passValidation != null) {
+                            Fluttertoast.showToast(msg: passValidation);
+                            setState(() => isLoading = false);
+                            return;
+                          }
 
-                              // 3. Email format validation
-                              if (!validInput()) {
-                                Fluttertoast.showToast(msg: "Please enter a valid email address");
-                                setState(() => isLoading = false);
-                                return;
-                              }
+                          // 3. Email format validation
+                          if (!validInput()) {
+                            Fluttertoast.showToast(msg: "Please enter a valid email address");
+                            setState(() => isLoading = false);
+                            return;
+                          }
 
-                              // 4. Password match validation
-                              if (cpassController.text.trim() != passController.text.trim()) {
-                                Fluttertoast.showToast(msg: "Passwords do not match");
-                                setState(() => isLoading = false);
-                                return;
-                              }
+                          // 4. Password match validation
+                          if (cpassController.text.trim() != passController.text.trim()) {
+                            Fluttertoast.showToast(msg: "Passwords do not match");
+                            setState(() => isLoading = false);
+                            return;
+                          }
 
-                              final email = emailController.text.trim();
+                          final email = emailController.text.trim();
+                          final fullName = nameController.text.trim();
+                          final surName = surNameController.text.trim();
 
-                              // 5. Space check validation
-                              if (!spaceCheck(nameController.text) ||
-                                  !spaceCheck(surNameController.text) ||
-                                  !spaceCheck(emailController.text)) {
-                                Fluttertoast.showToast(msg: "Spaces not allowed in name/surname/email");
-                                setState(() => isLoading = false);
-                                return;
-                              }
+                          // 5. Space check validation
+                          if (!spaceCheck(fullName) ||
+                              !spaceCheck(surName) ||
+                              !spaceCheck(email)) {
+                            Fluttertoast.showToast(msg: "Spaces not allowed in name/surname/email");
+                            setState(() => isLoading = false);
+                            return;
+                          }
 
-                              // 6. Check if email already exists
-                              List<String> methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
-                              if (methods.isNotEmpty) {
-                                Fluttertoast.showToast(msg: "This email is already registered");
-                                setState(() => isLoading = false);
-                                return;
-                              }
+                          // 6. Check if email already exists
+                          List<String> methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
+                          if (methods.isNotEmpty) {
+                            Fluttertoast.showToast(msg: "This email is already registered");
+                            setState(() => isLoading = false);
+                            return;
+                          }
 
-                              // 7. Create user if all validations pass
-                              UserCredential userCredential = await FirebaseAuth.instance
-                                  .createUserWithEmailAndPassword(
-                                email: email,
-                                password: passController.text.trim(),
-                              );
+                          // 7. Create user in Firebase Auth
+                          UserCredential userCredential = await FirebaseAuth.instance
+                              .createUserWithEmailAndPassword(
+                            email: email,
+                            password: passController.text.trim(),
+                          );
 
-                              // 8. Send verification email
-                              await userCredential.user?.sendEmailVerification();
-                              Fluttertoast.showToast(
-                                msg: "Verification email sent to $email",
-                                backgroundColor: Colors.blue,
-                                toastLength: Toast.LENGTH_LONG,
-                              );
-                              nameController.clear();
-                              surNameController.clear();
-                              emailController.clear();
-                              passController.clear();
-                              cpassController.clear();
-                              // 9. CORRECTED: Check verification status with reload
-                              await userCredential.user?.reload();
-                              final currentUser = FirebaseAuth.instance.currentUser;
+                          final uid = userCredential.user!.uid;
 
-                              if (currentUser != null && currentUser.emailVerified) {
-                                Fluttertoast.showToast(
-                                  msg: "Email verified successfully!",
-                                  backgroundColor: Colors.green,
-                                );
-                                // Only navigate if you want to
-                                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => LoginPage()));
-                              } else {
-                                Fluttertoast.showToast(
-                                  msg: "Please check your email and click the verification link",
+                          // 8. Save user profile to Firestore
+                          await registerUser(
+                            uid: uid,
+                            email: email,
+                            fullName: fullName,
+                            surName: surName,
+                          );
 
-                                  backgroundColor: Colors.orange,
-                                );
-                              }
+                          // 9. Send verification email
+                          await userCredential.user?.sendEmailVerification();
+                          Fluttertoast.showToast(
+                            msg: "Verification email sent to $email",
+                            backgroundColor: Colors.blue,
+                            toastLength: Toast.LENGTH_LONG,
+                          );
 
-                            } on FirebaseAuthException catch (e) {
-                              Fluttertoast.showToast(
-                                msg: "Error: ${e.message ?? 'Authentication failed'}",
-                                backgroundColor: Colors.red,
-                              );
-                            } catch (e) {
-                              Fluttertoast.showToast(
-                                msg: "An error occurred: ${e.toString()}",
-                                backgroundColor: Colors.red,
-                              );
-                            } finally {
-                              setState(() => isLoading = false);
-                            }
-                          },
-                          icon: isLoading
-                              ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: Colors.white,
-                            ),
-                          )
-                              : const Icon(Icons.check_circle),
-                          label: isLoading
-                              ? const Text("Processing...")
-                              : const Text("Register & Verify"),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.indigo[800],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            textStyle: const TextStyle(fontSize: 16),
-                          ),
+                          // 10. Clear input fields
+                          nameController.clear();
+                          surNameController.clear();
+                          emailController.clear();
+                          passController.clear();
+                          cpassController.clear();
+
+                          // 11. Check verification status
+                          await userCredential.user?.reload();
+                          final currentUser = FirebaseAuth.instance.currentUser;
+
+                          if (currentUser != null && currentUser.emailVerified) {
+                            Fluttertoast.showToast(
+                              msg: "Email verified successfully!",
+                              backgroundColor: Colors.green,
+                            );
+                            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => LoginPage()));
+                          } else {
+                            Fluttertoast.showToast(
+                              msg: "Please check your email and click the verification link",
+                              backgroundColor: Colors.orange,
+                            );
+                          }
+                        } on FirebaseAuthException catch (e) {
+                          Fluttertoast.showToast(
+                            msg: "Error: ${e.message ?? 'Authentication failed'}",
+                            backgroundColor: Colors.red,
+                          );
+                        } catch (e) {
+                          Fluttertoast.showToast(
+                            msg: "An error occurred: ${e.toString()}",
+                            backgroundColor: Colors.red,
+                          );
+                        } finally {
+                          setState(() => isLoading = false);
+                        }
+                      },
+                      icon: isLoading
+                          ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
                         ),
-                      ],
+                      )
+                          : const Icon(Icons.check_circle),
+                      label: isLoading
+                          ? const Text("Processing...")
+                          : const Text("Register & Verify"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.indigo[800],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        textStyle: const TextStyle(fontSize: 16),
+                      ),
+                    ),
+
+                    ],
                     ),
                   ),
                 ),
@@ -1108,16 +1111,49 @@ class MainPage extends StatefulWidget {
 }
 class _MainPageState extends State<MainPage> {
   bool isPost = true;
-  List<String> posts = [
-    'hello my name is Mahlatse and I am your mentor for the year 2025🥵🥵🥵🥵', "hi", "type",
-    'hello', "hi", "type",
-    'hello', "hi", "type",
-    'hello', "hi", "type",
-    'hello', "hi", "type",
-    'hello', "hi", "type",
-    'hello', "hi", "type",
-    'hello', "hi", "type",
-  ];
+  Future<void> hidePostForUser(String postId) async {
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+    final userRef = FirebaseFirestore.instance.collection('users').doc(userId);
+
+    await userRef.update({
+      'hiddenPosts': FieldValue.arrayUnion([postId]),
+    });
+  }
+
+  final TextEditingController postController=TextEditingController();
+  Future<void> uploadPost(String type, bool showRealUsername) async {
+    try {
+      final userId = FirebaseAuth.instance.currentUser!.uid;
+
+      // Fetch user doc
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+      print('Document exists? ${userDoc.exists}');
+      if (!userDoc.exists) {
+        Fluttertoast.showToast(msg: "User data not found!");
+        return;
+      }
+
+      final realUserName = userDoc.data()?['fullName'] ?? 'Unknown';
+      final surName = userDoc.data()?['surName'] ?? 'Unknown';
+     final username=realUserName+" "+surName;
+
+      // Decide username based on the boolean flag
+      final displayUserName = showRealUsername ? username : 'Anonymous ******';
+
+      String postText = postController.text;
+
+      await FirebaseFirestore.instance.collection('posts').add({
+        'userId': userId,
+        'userName': displayUserName,
+        'text': postText,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      Fluttertoast.showToast(msg: '$type uploaded');
+    } catch (e) {
+      Fluttertoast.showToast(msg: "Failed: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1190,6 +1226,7 @@ class _MainPageState extends State<MainPage> {
                   children: [
                     Expanded(
                       child: TextField(
+                        controller:postController,
                         textAlign: TextAlign.center,
                         decoration: InputDecoration(
                           hintText: "Write your post/question here",
@@ -1218,11 +1255,16 @@ class _MainPageState extends State<MainPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       GestureDetector(
+
                         onTap: () => setState(() => isPost = true),
                         onDoubleTap:(){
                           setState(() {
                             if(isPost){
-                              Fluttertoast.showToast(msg: "post aploaded");
+                              if(postController.text.isEmpty || postController.text==""){
+                                Fluttertoast.showToast(msg: "Post can not be empty");
+                                return;
+                              }
+                                uploadPost("Post",true);
                             }
 
                           });
@@ -1248,8 +1290,11 @@ class _MainPageState extends State<MainPage> {
                         onDoubleTap:(){
                           setState(() {
                             if(!isPost) {
-                              Fluttertoast.showToast(
-                                  msg: " Anony post aploaded");
+                              if(postController.text.isEmpty || postController.text==""){
+                                Fluttertoast.showToast(msg: "Post can not be empty");
+                                return;
+                              }
+                              uploadPost("Anonymous Post",false);
                             };
                           });
                         },
@@ -1277,97 +1322,146 @@ class _MainPageState extends State<MainPage> {
 
               // Main Content Area - Scrollable ListView
               Expanded(
-                child: ListView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  itemCount: posts.length,
-                  itemBuilder: (context, index) {
-                    return Container(
-                      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text("Username",style: TextStyle(
-                                color:Colors.indigo[800],
-                                fontSize:19,
-                                fontWeight: FontWeight.bold,
-                              ),),
-                              IconButton(onPressed: (){}, icon: Icon(Icons.delete,color: Colors.indigo[900],))
-                            ],
-                          ),
-                         
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  posts[index],
-                                  style: TextStyle(
-                                    fontSize: 16,
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('posts')
+                      .orderBy('timestamp', descending: true)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return Center(child: Text("No posts yet."));
+                    }
 
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () {
-                                  
-                                },
-                                icon: Icon(Icons.favorite_border, color: Colors.red),
+                    final docs = snapshot.data!.docs;
+
+                    return ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      itemCount: docs.length,
+                      itemBuilder: (context, index) {
+                        // Extract data from Firestore doc
+                        final postData = docs[index].data() as Map<String, dynamic>;
+                        final currentUserId = FirebaseAuth.instance.currentUser!.uid;
+                        final postUserId = postData['userId'];
+                        final username = (postUserId == currentUserId) ? "You" : (postData['userName'] ?? 'Unknown user');
+                        final text = postData['text'] ?? '';
+                        // Add more fields if you have likes, comments, timestamps, etc.
+
+                        return Container(
+                          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
                               ),
                             ],
                           ),
-                          SizedBox(height: 8),
-
-                          // Reply section: TextField + Comment button
-                          Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: TextField(
-                                  decoration: InputDecoration(
-                                    hintText: "Reply..",
-                                    isDense: true,
-                                    contentPadding:
-                                    EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(15),
+                              // Header: Username and delete button
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    username,
+                                    style: TextStyle(
+                                      color: Colors.indigo[800],
+                                      fontSize: 19,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                ),
+                                  IconButton(
+                                    onPressed: () {
+                                      final currentUserId = FirebaseAuth.instance.currentUser!.uid;
+                                      final postUserId = postData['userId'];
+                                    if(currentUserId==postUserId){
+                                      FirebaseFirestore.instance
+                                          .collection('posts')
+                                          .doc(docs[index].id)
+                                          .delete();
+                                      Fluttertoast.showToast(msg: "Post deleted.");
+                                    }
+                                    else{
+                                      // hidePostForUser(docs[index].id);
+                                      Fluttertoast.showToast(msg: "Allowed to delete personal posts only.");
+                                    }
+
+                                    },
+                                    icon: Icon(Icons.delete, color: Colors.indigo[900]),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 8),
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  // TODO: Implement comment action
-                                },
-                                icon: Icon(Icons.comment, size: 18),
-                                label: Text("Comment"),
-                                style: ElevatedButton.styleFrom(
-                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                  textStyle: TextStyle(fontSize: 14),
-                                ),
+
+                              // Post text and favorite button
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      text,
+                                      style: TextStyle(fontSize: 16),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    onPressed: () {
+                                      // TODO: Implement favorite/like action
+                                    },
+                                    icon: Icon(Icons.favorite_border, color: Colors.red),
+                                  ),
+                                ],
+                              ),
+
+                              SizedBox(height: 8),
+
+                              // Reply section
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      decoration: InputDecoration(
+                                        hintText: "Reply..",
+                                        isDense: true,
+                                        contentPadding:
+                                        EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(15),
+                                        ),
+                                      ),
+                                      // Optionally add controller to capture reply text
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      // TODO: Implement comment action (add reply to Firestore)
+                                    },
+                                    icon: Icon(Icons.comment, size: 18),
+                                    label: Text("Comment"),
+                                    style: ElevatedButton.styleFrom(
+                                      padding:
+                                      EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                      textStyle: TextStyle(fontSize: 14),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ],
-                      ),
+                        );
+                      },
                     );
                   },
                 ),
               ),
+
             ],
           ),
         ),
