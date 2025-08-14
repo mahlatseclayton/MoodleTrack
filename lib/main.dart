@@ -1122,6 +1122,8 @@ class _MainPageState extends State<MainPage> {
   }
 
   final TextEditingController postController = TextEditingController();
+  final TextEditingController commentController=TextEditingController();
+
 
   Future<void> uploadPost(String type, bool showRealUsername) async {
     try {
@@ -1158,7 +1160,25 @@ class _MainPageState extends State<MainPage> {
       Fluttertoast.showToast(msg: "Failed: $e");
     }
   }
+ Future<void>uploadComment(String comment,String postId)async{
+    //get post documents
+   try{
+     final postDoc=FirebaseFirestore.instance.collection('posts').doc(postId).get();
+     //use the post id to create a comment table
+     await  FirebaseFirestore.instance.collection('comments').add({
+       'postId':postId,
+       'comment':comment,
+       'timestamp':FieldValue.serverTimestamp(),
+     }
 
+     );
+     Fluttertoast.showToast(msg: "success");
+   }catch(e,stackTrace){
+     Fluttertoast.showToast(msg: "error : $e");
+   }
+
+
+ }
   // EDITED THIS FUNCTION TO PROPERLY HANDLE LIKES PER USER
   Future<void> addLike(String postId, List<dynamic> currentLikedBy) async {
     final userId = FirebaseAuth.instance.currentUser!.uid;
@@ -1446,6 +1466,7 @@ class _MainPageState extends State<MainPage> {
                                 children: [
                                   Expanded(
                                     child: TextField(
+                                      controller:commentController,
                                       decoration: InputDecoration(
                                         hintText: "Reply..",
                                         isDense: true,
@@ -1460,7 +1481,12 @@ class _MainPageState extends State<MainPage> {
                                   const SizedBox(width: 8),
                                   ElevatedButton.icon(
                                     onPressed: () {
-                                      // TODO: Implement comment action (add reply to Firestore)
+                                  // comment section
+                                      String commentText=commentController.text;
+                                      uploadComment(commentText, postId);
+                                      // add comment to database
+                                      Fluttertoast.showToast(msg: commentText);
+                                      commentController.clear();
                                     },
                                     icon: Icon(Icons.comment, size: 18),
                                     label: Text("Comment"),
