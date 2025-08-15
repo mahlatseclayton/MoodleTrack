@@ -1185,13 +1185,12 @@ class _MainPageState extends State<MainPage> {
     final postRef = FirebaseFirestore.instance.collection('posts').doc(postId);
 
     if (currentLikedBy.contains(userId)) {
-      // User already liked - unlike it
       await postRef.update({
-        'like': FieldValue.increment(-1),
-        'likedBy': FieldValue.arrayRemove([userId]),
-      });
+                    'like': FieldValue.increment(-1),
+                    'likedBy': FieldValue.arrayRemove([userId]),
+                  });
+
     } else {
-      // User hasn't liked - add like
       await postRef.update({
         'like': FieldValue.increment(1),
         'likedBy': FieldValue.arrayUnion([userId]),
@@ -1205,7 +1204,7 @@ class _MainPageState extends State<MainPage> {
       resizeToAvoidBottomInset: true,
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.grey[500],
+        backgroundColor: Colors.grey[200],
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.white.withOpacity(.35),
         selectedFontSize: 14,
@@ -1246,16 +1245,16 @@ class _MainPageState extends State<MainPage> {
         ],
       ),
       appBar: AppBar(
-        backgroundColor: Colors.grey[500],
+        backgroundColor: Colors.white,
         title: Text(
           "Home",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(color: Colors.black),
         ),
       ),
       body: SafeArea(
         bottom: false,
         child: Container(
-          color: Colors.grey[200],
+          color: Colors.white,
           child: Column(
             children: [
               // Header Section
@@ -1389,24 +1388,24 @@ class _MainPageState extends State<MainPage> {
                         final likedBy = List<String>.from(postData['likedBy'] ?? []);
                         final isLiked = likedBy.contains(currentUserId); // EDITED: Check if current user liked the post
 
-                        return Container(
+                        return  Container(
                           margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.grey[300],
+                            color: Colors.grey[50],
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.05),
                                 blurRadius: 4,
-                                offset: Offset(0, 2),
+                                offset: const Offset(0, 2),
                               ),
                             ],
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Header: Username and delete button
+
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
@@ -1414,64 +1413,96 @@ class _MainPageState extends State<MainPage> {
                                     username,
                                     style: TextStyle(
                                       color: Colors.indigo[800],
-                                      fontSize: 19,
+                                      fontSize: 17,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   IconButton(
                                     onPressed: () {
                                       if (currentUserId == postUserId) {
-                                        FirebaseFirestore.instance
-                                            .collection('posts')
-                                            .doc(docs[index].id)
-                                            .delete();
-                                        Fluttertoast.showToast(msg: "Post deleted.");
+                                        //
+                                        showDialog(
+                                          context: context,
+                                          builder: (_) => AlertDialog(
+                                            title: const Text("Delete Post"),
+                                            content: const Text("Are you sure you want to delete this post?"),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context),
+                                                child: const Text("Cancel"),
+                                              ),
+                                              TextButton(
+                                                onPressed: () async {
+                                                  FirebaseFirestore.instance
+                                                      .collection('posts')
+                                                      .doc(docs[index].id)
+                                                      .delete();
+
+
+                                                  Navigator.pop(context);
+                                                },
+                                                child: const Text("Delete", style: TextStyle(color: Colors.red)),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                        //
+
                                       } else {
-                                        Fluttertoast.showToast(msg: "Allowed to delete personal posts only.");
+                                        Fluttertoast.showToast(
+                                            msg: "Allowed to delete personal posts only.");
                                       }
                                     },
-                                    icon: Icon(Icons.delete, color: Colors.indigo[900]),
+                                    icon: Icon(Icons.delete, color: Colors.red[700]),
                                   ),
                                 ],
                               ),
 
-                              // Post text and favorite button
+                              const SizedBox(height: 4),
+
+                              // Post text
+                              Text(
+                                text,
+                                style: const TextStyle(fontSize: 15, height: 1.3),
+                              ),
+
+                              const SizedBox(height: 8),
+
+                              // Like button row
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Expanded(
-                                    child: Text(
-                                      text,
-                                      style: TextStyle(fontSize: 16),
-                                    ),
-                                  ),
                                   IconButton(
                                     onPressed: () {
                                       addLike(postId, likedBy);
                                     },
                                     icon: Badge(
-                                      label: Text(postLike.toString(), style: TextStyle(color: Colors.white)),
+                                      label: Text(
+                                        postLike.toString(),
+                                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                                      ),
                                       child: Icon(
-                                          isLiked ? Icons.favorite : Icons.favorite_border,
-                                          color: isLiked ? Colors.red : Colors.grey),
+                                        isLiked ? Icons.favorite : Icons.favorite_border,
+                                        color: isLiked ? Colors.red : Colors.grey,
+                                      ),
                                     ),
                                   ),
+                                  const Spacer(),
                                 ],
                               ),
 
-                              SizedBox(height: 8),
+                              const Divider(height: 16),
 
-                              // Reply section
+                              // Reply / Comment Input
                               Row(
                                 children: [
                                   Expanded(
                                     child: TextField(
-                                      controller:commentController,
+                                      controller: commentController,
                                       decoration: InputDecoration(
-                                        hintText: "Reply..",
+                                        hintText: "Add a reply...",
                                         isDense: true,
                                         contentPadding:
-                                        EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                        const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                                         border: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(15),
                                         ),
@@ -1479,28 +1510,47 @@ class _MainPageState extends State<MainPage> {
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  ElevatedButton.icon(
+                                 IconButton(
                                     onPressed: () {
-                                  // comment section
-                                      String commentText=commentController.text;
+                                      String commentText = commentController.text;
                                       uploadComment(commentText, postId);
-                                      // add comment to database
                                       Fluttertoast.showToast(msg: commentText);
                                       commentController.clear();
                                     },
-                                    icon: Icon(Icons.comment, size: 18),
-                                    label: Text("Comment"),
+                                    icon: const Icon(Icons.send, size: 22),
                                     style: ElevatedButton.styleFrom(
-                                      padding:
-                                      EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                      textStyle: TextStyle(fontSize: 14),
+
+
                                     ),
                                   ),
                                 ],
                               ),
+
+                              const SizedBox(height: 6),
+
+                              // View Comments link
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => PostCommentsPage(),
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  "View comments",
+                                  style: TextStyle(
+                                    decoration: TextDecoration.underline,
+                                    color: Colors.blue[800],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         );
+
                       },
                     );
                   },
@@ -1658,6 +1708,160 @@ class _HelpPageState extends State<HelpPage> {
     );
   }
 }
+
+
+class PostCommentsPage extends StatefulWidget {
+  const PostCommentsPage({Key? key}) : super(key: key);
+
+  @override
+  _PostCommentsPageState createState() => _PostCommentsPageState();
+}
+
+class _PostCommentsPageState extends State<PostCommentsPage> {
+  bool isLiked = false;
+  int likeCount = 12; // starting dummy likes
+  List<String> comments = ["Nice post!", "🔥🔥🔥", "Love this!"];
+  final TextEditingController _commentController = TextEditingController();
+
+  void toggleLike() {
+    setState(() {
+      isLiked = !isLiked;
+      likeCount += isLiked ? 1 : -1;
+    });
+  }
+
+  void addComment() {
+    String newComment = _commentController.text.trim();
+    if (newComment.isNotEmpty) {
+      setState(() {
+        comments.add(newComment);
+        _commentController.clear();
+      });
+    }
+  }
+
+  void deletePost() {
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Delete Post"),
+        content: const Text("Are you sure you want to delete this post?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context); // go back to previous page
+            },
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Post & Comments")),
+      body: Column(
+        children: [
+          // Post Section
+          Card(
+            margin: const EdgeInsets.all(8),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "This is a sample post. Imagine it came from a database.",
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          isLiked ? Icons.favorite : Icons.favorite_border,
+                          color: isLiked ? Colors.red : Colors.grey,
+                        ),
+                        onPressed: toggleLike,
+                      ),
+                      Text("$likeCount"),
+                      const SizedBox(width: 16),
+                      IconButton(
+                        icon: const Icon(Icons.comment),
+                        onPressed: () {
+                          // Scroll to comment section or focus input
+                        },
+                      ),
+                      const SizedBox(width: 16),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: deletePost,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const Divider(),
+
+          // Comments List
+          Expanded(
+            child: comments.isEmpty
+                ? const Center(child: Text("No comments yet."))
+                : ListView.builder(
+              itemCount: comments.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  leading: const CircleAvatar(child: Icon(Icons.person)),
+                  title: Text(comments[index]),
+                );
+              },
+            ),
+          ),
+
+          // Comment Input
+          SafeArea(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(top: BorderSide(color: Colors.grey[300]!)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _commentController,
+                      decoration: const InputDecoration(
+                        hintText: "Add a comment...",
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.send),
+                    onPressed: addComment,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 
 
 
