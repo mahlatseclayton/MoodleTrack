@@ -1160,7 +1160,7 @@ class _MainPageState extends State<MainPage> {
       Fluttertoast.showToast(msg: "Failed: $e");
     }
   }
- Future<void>uploadComment(String comment,String postId)async{
+ Future<void>uploadComment(String comment,String postId,String userId)async{
     //get post documents
    try{
      final postDoc=FirebaseFirestore.instance.collection('posts').doc(postId).get();
@@ -1169,6 +1169,9 @@ class _MainPageState extends State<MainPage> {
        'postId':postId,
        'comment':comment,
        'timestamp':FieldValue.serverTimestamp(),
+       'userId': userId,
+       'userName': FirebaseAuth.instance.currentUser?.displayName ?? 'Anonymous',
+       'timestamp': FieldValue.serverTimestamp(),
      }
 
      );
@@ -1179,7 +1182,7 @@ class _MainPageState extends State<MainPage> {
 
 
  }
-  // EDITED THIS FUNCTION TO PROPERLY HANDLE LIKES PER USER
+
   Future<void> addLike(String postId, List<dynamic> currentLikedBy) async {
     final userId = FirebaseAuth.instance.currentUser!.uid;
     final postRef = FirebaseFirestore.instance.collection('posts').doc(postId);
@@ -1513,7 +1516,7 @@ class _MainPageState extends State<MainPage> {
                                  IconButton(
                                     onPressed: () {
                                       String commentText = commentController.text;
-                                      uploadComment(commentText, postId);
+                                      uploadComment(commentText, postId,currentUserId);
                                       Fluttertoast.showToast(msg: commentText);
                                       commentController.clear();
                                     },
@@ -1534,7 +1537,7 @@ class _MainPageState extends State<MainPage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => PostCommentsPage(),
+                                      builder: (context) => PostCommentsPage(postId:postId,userId:currentUserId),
                                     ),
                                   );
                                 },
@@ -1711,37 +1714,91 @@ class _HelpPageState extends State<HelpPage> {
 
 
 class PostCommentsPage extends StatefulWidget {
-  const PostCommentsPage({Key? key}) : super(key: key);
+  final String postId;
+  final String userId;
+
+  const PostCommentsPage({
+    Key? key,
+    required this.postId,
+    required this.userId,
+  }) : super(key: key);
 
   @override
-  _PostCommentsPageState createState() => _PostCommentsPageState();
+  State<PostCommentsPage> createState() => _PostCommentsPageState();
 }
 
 class _PostCommentsPageState extends State<PostCommentsPage> {
-  bool isLiked = false;
-  int likeCount = 12; // starting dummy likes
-  List<String> comments = ["Nice post!", "🔥🔥🔥", "Love this!"];
+  late Future<DocumentSnapshot<Map<String, dynamic>>> postFuture;
+  late Stream<QuerySnapshot<Map<String, dynamic>>> commentsStream;
   final TextEditingController _commentController = TextEditingController();
 
-  void toggleLike() {
-    setState(() {
-      isLiked = !isLiked;
-      likeCount += isLiked ? 1 : -1;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
   }
 
-  void addComment() {
-    String newComment = _commentController.text.trim();
-    if (newComment.isNotEmpty) {
+  void _loadData() {
+    postFuture = FirebaseFirestore.instance
+        .collection('posts')
+        .doc(widget.postId)
+        .get();
+
+    commentsStream = FirebaseFirestore.instance
+        .collection('comments')
+        .where('postId', isEqualTo: widget.postId)
+        .orderBy('timestamp', descending: true) // Changed to descending for newest first
+        .snapshots();
+  }
+
+  Future<void> addLike() async {
+    try {
+      final userId = FirebaseAuth.instance.currentUser!.uid;
+      final postRef = FirebaseFirestore.instance.collection('posts').doc(widget.postId);
+
+      // Get fresh data to ensure we have current state
+      final postDoc = await postRef.get();
+      final currentLikedBy = List<String>.from(postDoc['likedBy'] ?? []);
+
+      if (currentLikedBy.contains(userId)) {
+        await postRef.update({
+          'like': FieldValue.increment(-1),
+          'likedBy': FieldValue.arrayRemove([userId]),
+        });
+      } else {
+        await postRef.update({
+          'like': FieldValue.increment(1),
+          'likedBy': FieldValue.arrayUnion([userId]),
+        });
+      }
+
+      // Refresh the post data
       setState(() {
-        comments.add(newComment);
-        _commentController.clear();
+        postFuture = postRef.get();
       });
+    } catch (e) {
+      Fluttertoast.showToast(msg: "Error liking post: $e");
+    }
+  }
+
+  Future<void> addComment(String comment) async {
+    try {
+      if (comment.trim().isEmpty) return;
+
+      await FirebaseFirestore.instance.collection('comments').add({
+        'postId': widget.postId, // Consistent field name
+        'comment': comment,
+        'userId': widget.userId,
+        'userName': FirebaseAuth.instance.currentUser?.displayName ?? 'Anonymous',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+      _commentController.clear();
+    } catch (e) {
+      Fluttertoast.showToast(msg: "Error adding comment: $e");
     }
   }
 
   void deletePost() {
-
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -1753,9 +1810,34 @@ class _PostCommentsPageState extends State<PostCommentsPage> {
             child: const Text("Cancel"),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context); // go back to previous page
+            onPressed: () async {
+              try {
+                // Delete post and its comments
+                final batch = FirebaseFirestore.instance.batch();
+
+                // Delete post
+                batch.delete(FirebaseFirestore.instance.collection('posts').doc(widget.postId));
+
+                // Delete all comments for this post
+                final comments = await FirebaseFirestore.instance
+                    .collection('comments')
+                    .where('postId', isEqualTo: widget.postId)
+                    .get();
+
+                for (var doc in comments.docs) {
+                  batch.delete(doc.reference);
+                }
+
+                await batch.commit();
+
+                if (mounted) {
+                  Navigator.pop(context);
+                  Navigator.pop(context);
+                }
+              } catch (e) {
+                if (mounted) Navigator.pop(context);
+                Fluttertoast.showToast(msg: "Error deleting post: $e");
+              }
             },
             child: const Text("Delete", style: TextStyle(color: Colors.red)),
           ),
@@ -1767,63 +1849,104 @@ class _PostCommentsPageState extends State<PostCommentsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Post & Comments")),
+      appBar: AppBar(title: const Text('Post & Comments')),
       body: Column(
         children: [
-          // Post Section
-          Card(
-            margin: const EdgeInsets.all(8),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "This is a sample post. Imagine it came from a database.",
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
+          // Post with like/comment/delete
+          FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            future: postFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: CircularProgressIndicator(),
+                );
+              }
+              if (!snapshot.hasData || !snapshot.data!.exists) {
+                return const Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: Text('Post not found'),
+                );
+              }
+
+              final postData = snapshot.data!.data()!;
+              final likedBy = List<String>.from(postData['likedBy'] ?? []);
+              final isLiked = likedBy.contains(widget.userId);
+              final likeCount = postData['like'] ?? 0;
+
+              return Card(
+                margin: const EdgeInsets.all(8),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      IconButton(
-                        icon: Icon(
-                          isLiked ? Icons.favorite : Icons.favorite_border,
-                          color: isLiked ? Colors.red : Colors.grey,
-                        ),
-                        onPressed: toggleLike,
+                      Text(
+                        postData['userName'] ?? 'Unknown User',
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
                       ),
-                      Text("$likeCount"),
-                      const SizedBox(width: 16),
-                      IconButton(
-                        icon: const Icon(Icons.comment),
-                        onPressed: () {
-                          // Scroll to comment section or focus input
-                        },
-                      ),
-                      const SizedBox(width: 16),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: deletePost,
+                      const SizedBox(height: 8),
+                      Text(postData['text'] ?? ''),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              isLiked
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              color: isLiked ? Colors.red : Colors.grey,
+                            ),
+                            onPressed: addLike, // Simplified call
+                          ),
+                          Text("$likeCount"),
+                          const SizedBox(width: 16),
+                          const IconButton(
+                            icon: Icon(Icons.comment),
+                            onPressed: null, // Disabled as we're already in comments
+                          ),
+                          if (postData['userId'] == widget.userId) ...[
+                            const SizedBox(width: 16),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: deletePost,
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
 
           const Divider(),
 
-          // Comments List
+          // Comments
           Expanded(
-            child: comments.isEmpty
-                ? const Center(child: Text("No comments yet."))
-                : ListView.builder(
-              itemCount: comments.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  leading: const CircleAvatar(child: Icon(Icons.person)),
-                  title: Text(comments[index]),
+            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: commentsStream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(child: Text('No comments yet.'));
+                }
+
+                final comments = snapshot.data!.docs;
+                return ListView.builder(
+                  reverse: true, // To show newest at bottom
+                  itemCount: comments.length,
+                  itemBuilder: (context, index) {
+                    final commentData = comments[index].data();
+                    return ListTile(
+                      leading: const CircleAvatar(child: Icon(Icons.person)),
+                      title: Text(commentData['userName'] ?? 'Anonymous'),
+                    );
+                  },
                 );
               },
             ),
@@ -1850,7 +1973,12 @@ class _PostCommentsPageState extends State<PostCommentsPage> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.send),
-                    onPressed: addComment,
+                    onPressed: () {
+                      final comment = _commentController.text.trim();
+                      if (comment.isNotEmpty) {
+                        addComment(comment);
+                      }
+                    },
                   ),
                 ],
               ),
@@ -1860,13 +1988,8 @@ class _PostCommentsPageState extends State<PostCommentsPage> {
       ),
     );
   }
+
 }
-
-
-
-
-
-
 
 
 
