@@ -2072,7 +2072,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
             position: _animation,
             child: Container(
               decoration:BoxDecoration(
-                color:Colors.blue,
+                color:Colors.grey[200],
               ),
               child:Center(child:Text(
               "Welcome back!",
