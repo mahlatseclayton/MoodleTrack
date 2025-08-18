@@ -16,7 +16,6 @@ import 'package:fluttertoast/fluttertoast.dart';
 //   runApp(const MyApp());
 // }
 import 'dart:io';  // Add this import
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -24,26 +23,43 @@ Future<void> main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    print(' Firebase initialized!');
+    print('Firebase initialized!');
   } catch (e) {
-    print(' Firebase failed to initialize: $e');
+    print('Firebase failed to initialize: $e');
   }
 
-  runApp(const MyApp());
+  runApp(const AuthCheck());
 }
 
-
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class AuthCheck extends StatelessWidget {
+  const AuthCheck({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home:const Homepage(),
+      debugShowCheckedModeBanner: false,
+      home: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          if (snapshot.hasData) {
+            // User already logged in
+            return SplashPage();
+          } else {
+            // New user (not logged in yet)
+            return const Homepage();
+          }
+        },
+      ),
     );
   }
 }
+
+
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -1122,7 +1138,23 @@ class _MainPageState extends State<MainPage> {
   }
 
   final TextEditingController postController = TextEditingController();
-  final TextEditingController commentController=TextEditingController();
+  // Add a map to store controllers for each post
+  final Map<String, TextEditingController> _commentControllers = {};
+
+  // Helper method to get or create a controller for a post
+  TextEditingController _getCommentController(String postId) {
+    if (!_commentControllers.containsKey(postId)) {
+      _commentControllers[postId] = TextEditingController();
+    }
+    return _commentControllers[postId]!;
+  }
+
+  //dispose all controllers when the widget is disposed
+  @override
+  void dispose() {
+    _commentControllers.values.forEach((controller) => controller.dispose());
+    super.dispose();
+  }
 
 
   Future<void> uploadPost(String type, bool showRealUsername) async {
@@ -1500,7 +1532,7 @@ class _MainPageState extends State<MainPage> {
                                 children: [
                                   Expanded(
                                     child: TextField(
-                                      controller: commentController,
+                                      controller:  _getCommentController(postId),
                                       decoration: InputDecoration(
                                         hintText: "Add a reply...",
                                         isDense: true,
@@ -1515,10 +1547,10 @@ class _MainPageState extends State<MainPage> {
                                   const SizedBox(width: 8),
                                  IconButton(
                                     onPressed: () {
-                                      String commentText = commentController.text;
+                                      String commentText = _getCommentController(postId).text;
                                       uploadComment(commentText, postId,currentUserId);
                                       Fluttertoast.showToast(msg: commentText);
-                                      commentController.clear();
+                                      _getCommentController(postId).clear();
                                     },
                                     icon: const Icon(Icons.send, size: 22),
                                     style: ElevatedButton.styleFrom(
@@ -1729,7 +1761,8 @@ class PostCommentsPage extends StatefulWidget {
 
 class _PostCommentsPageState extends State<PostCommentsPage> {
   late Future<DocumentSnapshot<Map<String, dynamic>>> postFuture;
-  late Stream<QuerySnapshot<Map<String, dynamic>>> commentsStream;
+  late final Stream<QuerySnapshot<Map<String, dynamic>>> commentsStream;
+  final ScrollController _scrollController = ScrollController();
   final TextEditingController _commentController = TextEditingController();
 
   @override
@@ -1747,7 +1780,7 @@ class _PostCommentsPageState extends State<PostCommentsPage> {
     commentsStream = FirebaseFirestore.instance
         .collection('comments')
         .where('postId', isEqualTo: widget.postId)
-        .orderBy('timestamp', descending: true) // Changed to descending for newest first
+    .orderBy('timestamp',descending:false)
         .snapshots();
   }
 
@@ -1868,7 +1901,11 @@ class _PostCommentsPageState extends State<PostCommentsPage> {
                   child: Text('Post not found'),
                 );
               }
-
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _scrollController.jumpTo(
+                  _scrollController.position.maxScrollExtent,
+                );
+              });
               final postData = snapshot.data!.data()!;
               final likedBy = List<String>.from(postData['likedBy'] ?? []);
               final isLiked = likedBy.contains(widget.userId);
@@ -1902,10 +1939,6 @@ class _PostCommentsPageState extends State<PostCommentsPage> {
                           ),
                           Text("$likeCount"),
                           const SizedBox(width: 16),
-                          const IconButton(
-                            icon: Icon(Icons.comment),
-                            onPressed: null, // Disabled as we're already in comments
-                          ),
                           if (postData['userId'] == widget.userId) ...[
                             const SizedBox(width: 16),
                             IconButton(
@@ -1938,13 +1971,14 @@ class _PostCommentsPageState extends State<PostCommentsPage> {
 
                 final comments = snapshot.data!.docs;
                 return ListView.builder(
-                  reverse: true, // To show newest at bottom
+                  controller: _scrollController,
                   itemCount: comments.length,
                   itemBuilder: (context, index) {
                     final commentData = comments[index].data();
                     return ListTile(
                       leading: const CircleAvatar(child: Icon(Icons.person)),
                       title: Text(commentData['userName'] ?? 'Anonymous'),
+                      subtitle: Text(commentData['comment']),
                     );
                   },
                 );
@@ -1990,6 +2024,71 @@ class _PostCommentsPageState extends State<PostCommentsPage> {
   }
 
 }
+//delay home page
+//
+class SplashPage extends StatefulWidget {
+  @override
+  _SplashPageState createState() => _SplashPageState();
+}
+
+class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      duration: Duration(seconds: 2),
+      vsync: this,
+    );
+
+    _animation = Tween<Offset>(
+      begin: Offset(-1.5, 0), // start off-screen left
+      end: Offset(1.5, 0),      // end at center
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInCirc));
+
+    _controller.forward(); // start animation
+
+    // Navigate after 3 seconds
+    Future.delayed(Duration(seconds: 5), () {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => MainPage()));
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: SlideTransition(
+            position: _animation,
+            child: Container(
+              decoration:BoxDecoration(
+                color:Colors.blue,
+              ),
+              child:Center(child:Text(
+              "Welcome back!",
+              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+            ),
+          ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+
 
 
 
