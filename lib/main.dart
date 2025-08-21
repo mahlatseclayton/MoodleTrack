@@ -2,6 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/token_service.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:learning_app/screens/notifications_screen.dart';
+import 'AppData.dart';
 import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -48,7 +53,7 @@ class AuthCheck extends StatelessWidget {
           }
           if (snapshot.hasData) {
             // User already logged in
-            return SplashPage();
+            return MainPage();
           } else {
             // New user (not logged in yet)
             return const Homepage();
@@ -205,38 +210,69 @@ class _LoginPageState extends State<LoginPage> {
   bool isCustomer = true; //student
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passController = TextEditingController();
+  Future<String?> _getMoodleToken(String username, String password) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            'https://courses.ms.wits.ac.za/moodle/login/token.php?'
+                'username=$username&password=$password&service=moodle_mobile_app'
+        ),
+      );
 
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['token']?.toString();
+      } else {
+        print('Token request failed: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Token error: $e');
+      return null;
+    }
+  }
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => isLoading = true);
 
     try {
+
       final email = emailController.text.trim(); // removed .toLowerCase()
+      final Username=email.substring(0,7);
       final password = passController.text.trim();
+      final token = await _getMoodleToken(Username, password);
 
-      // Sign in with email and password
-      UserCredential userCredential = await FirebaseAuth.instance
-          .signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      if (token != null) {
+        // STORE THE TOKEN - This is the key step!
+        await TokenService.storeToken(token);
 
-      // Check if email is verified
-      if (!userCredential.user!.emailVerified) {
-        await FirebaseAuth.instance.signOut();
-        throw FirebaseAuthException(
-          code: 'email-not-verified',
-          message: 'Please verify your email first',
+
+        // Sign in with email and password
+        UserCredential userCredential = await FirebaseAuth.instance
+            .signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+
+        // Check if email is verified
+        if (!userCredential.user!.emailVerified) {
+          await FirebaseAuth.instance.signOut();
+          throw FirebaseAuthException(
+            code: 'email-not-verified',
+            message: 'Please verify your email first',
+          );
+        }
+
+        // Login successful - navigate to home
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) =>
+              MainPage(
+
+              )),
         );
       }
-
-      // Login successful - navigate to home
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MainPage()),
-      );
-
     } on FirebaseAuthException catch (e) {
       String message;
       switch (e.code) {
@@ -1186,7 +1222,7 @@ class _MainPageState extends State<MainPage> {
         'likedBy': [], // Added array to track users who liked the post
         'timestamp': FieldValue.serverTimestamp(),
       });
-
+      postController.clear();
       Fluttertoast.showToast(msg: '$type uploaded');
     } catch (e) {
       Fluttertoast.showToast(msg: "Failed: $e");
@@ -1261,7 +1297,7 @@ class _MainPageState extends State<MainPage> {
             label: 'Tasks',
             icon: Badge(
               backgroundColor: Colors.red,
-              label: Text("15", style: TextStyle(color: Colors.white)),
+              label: Text("", style: TextStyle(color: Colors.white)),
               child: Icon(Icons.alarm, color: Colors.indigo[900]),
             ),
           ),
@@ -1607,94 +1643,12 @@ class TasksPage extends StatefulWidget {
 
 class _TasksPageState extends State<TasksPage> {
   @override
-  List<String>tasks=["mathematics","physics","geography","mathematics","physics","geography","mathematics","physics","geography"];
+
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.grey[500],
-        title: Text("Tasks",style:TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-        ),),
 
-      ),
-      body:Expanded(
-        child: ListView.builder(
-          physics: const AlwaysScrollableScrollPhysics(),
-          itemCount: tasks.length,
-          itemBuilder: (context, index) {
-            return Container(
-              margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(tasks[index],style: TextStyle(
-                        color:Colors.indigo[800],
-                        fontSize:19,
-                        fontWeight: FontWeight.bold,
-                      ),),
-                      ElevatedButton.icon(onPressed: (){
+      body:NotificationsScreen(),
 
-                      },
-                       label:Text("Mark as done"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[200],
-                        ),
-                        icon:IconButton(onPressed: (){}, icon: Icon(Icons.delete,color: Colors.indigo[900],)),
-                      ),
-
-                    ],
-                  ),
-                  SizedBox(height:6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        // child: Text(
-                        //   tasks[index],
-                        //   style: TextStyle(
-                        //     fontSize: 16,
-                        //
-                        //   ),
-                        // ),
-                        child: Container(
-                          child: Column(
-                            children: [
-                              Text("TaskType"),
-                              SizedBox(height: 4,),
-                              Text("Opened: "+"Wednesday ,7 August 2025 11:59 PM"),
-                              SizedBox(height:4),
-                              Text("Due: "+"Wednesday ,7 August 2025 11:59 PM",style: TextStyle(color: Colors.red,fontWeight: FontWeight.bold),),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                    ],
-                  ),
-                  SizedBox(height: 8),
-
-                ],
-              ),
-            );
-          },
-        ),
-      ),
     );
   }
 }
@@ -2024,72 +1978,5 @@ class _PostCommentsPageState extends State<PostCommentsPage> {
   }
 
 }
-//delay home page
-//
-class SplashPage extends StatefulWidget {
-  @override
-  _SplashPageState createState() => _SplashPageState();
-}
-
-class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<Offset> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _controller = AnimationController(
-      duration: Duration(seconds: 2),
-      vsync: this,
-    );
-
-    _animation = Tween<Offset>(
-      begin: Offset(-1.5, 0), // start off-screen left
-      end: Offset(1.5, 0),      // end at center
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInCirc));
-
-    _controller.forward(); // start animation
-
-    // Navigate after 3 seconds
-    Future.delayed(Duration(seconds: 5), () {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => MainPage()));
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: SlideTransition(
-            position: _animation,
-            child: Container(
-              decoration:BoxDecoration(
-                color:Colors.grey[200],
-              ),
-              child:Center(child:Text(
-              "Welcome back!",
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-            ),
-          ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-
-
-
-
 
 
