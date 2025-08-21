@@ -1771,12 +1771,15 @@ class _PostCommentsPageState extends State<PostCommentsPage> {
   Future<void> addComment(String comment) async {
     try {
       if (comment.trim().isEmpty) return;
+      final userId= widget.userId;
+      final userDoc= await FirebaseFirestore.instance.collection('users').doc(userId).get();
+      final displayName=userDoc.data()?['fullName']+" "+userDoc.data()?['surName'];
 
       await FirebaseFirestore.instance.collection('comments').add({
         'postId': widget.postId, // Consistent field name
         'comment': comment,
         'userId': widget.userId,
-        'userName': FirebaseAuth.instance.currentUser?.displayName ?? 'Anonymous',
+        'userName': displayName,
         'timestamp': FieldValue.serverTimestamp(),
       });
       _commentController.clear();
