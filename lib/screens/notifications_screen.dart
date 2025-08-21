@@ -58,7 +58,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (uri.host.contains('courses.ms.wits.ac.za')) {
       await _launchMoodleUrl(url);
     } else {
-      // For external URLs, launch normally
+      // For external URLs, launch normally - KEEP THIS METHOD
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri);
       } else {
@@ -68,6 +68,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       }
     }
   }
+
   Future<void> _launchMoodleUrl(String url) async {
     final token = await TokenService.getToken();
 
@@ -78,22 +79,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       return;
     }
 
-    final uri = Uri.parse(url);
-    final queryParams = Map<String, String>.from(uri.queryParameters);
+    // Check if the URL already has query parameters
+    final hasQuery = url.contains('?');
 
-    // Add or update the token parameter
-    queryParams['wstoken'] = token;
+    // Construct the authenticated URL
+    final authenticatedUrl = '$url${hasQuery ? '&' : '?'}wstoken=$token';
 
-    // Rebuild the URL with the token
-    final authenticatedUri = Uri(
-      scheme: uri.scheme,
-      host: uri.host,
-      path: uri.path,
-      queryParameters: queryParams.isNotEmpty ? queryParams : null,
-      fragment: uri.fragment,
-    );
+    print('Authenticated URL: $authenticatedUrl'); // Debugging
 
-    print('Authenticated URL: $authenticatedUri'); // Debugging
+    final authenticatedUri = Uri.parse(authenticatedUrl);
 
     if (await canLaunchUrl(authenticatedUri)) {
       await launchUrl(authenticatedUri);
@@ -103,6 +97,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       );
     }
   }
+
   Widget _buildNotificationCard(MoodleNotification notification) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
