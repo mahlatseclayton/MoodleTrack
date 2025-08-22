@@ -1243,7 +1243,7 @@ class _MainPageState extends State<MainPage> {
      }
 
      );
-     Fluttertoast.showToast(msg: "success");
+     Fluttertoast.showToast(msg: "comment sent");
    }catch(e,stackTrace){
      Fluttertoast.showToast(msg: "error : $e");
    }
@@ -1275,9 +1275,9 @@ class _MainPageState extends State<MainPage> {
       resizeToAvoidBottomInset: true,
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.grey[200],
+        backgroundColor: Colors.grey[400],
         selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white.withOpacity(.35),
+        unselectedItemColor: Colors.black,
         selectedFontSize: 14,
         unselectedFontSize: 14,
         onTap: (value) {
@@ -1286,7 +1286,7 @@ class _MainPageState extends State<MainPage> {
             Navigator.push(context, MaterialPageRoute(builder: (_) => TasksPage()));
           } else if (value == 1) {
             //meetings
-            Navigator.push(context, MaterialPageRoute(builder: (_) => MeetingsPage()));
+            Navigator.push(context, MaterialPageRoute(builder: (_) => Maps()));
           } else if (value == 2) {
             // helpline
             Navigator.push(context, MaterialPageRoute(builder: (_) => HelpPage()));
@@ -1302,12 +1302,9 @@ class _MainPageState extends State<MainPage> {
             ),
           ),
           BottomNavigationBarItem(
-            label: 'Announcements',
+            label: 'Map',
             backgroundColor: Colors.red,
-            icon: Badge(
-              label: Text("2", style: TextStyle(color: Colors.white)),
-              child: Icon(Icons.group, color: Colors.indigo[900]),
-            ),
+            icon:  Icon(Icons.map, color: Colors.indigo[900]),
           ),
           BottomNavigationBarItem(
             label: 'HelpLine',
@@ -1316,7 +1313,7 @@ class _MainPageState extends State<MainPage> {
         ],
       ),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.grey[200],
         title: Text(
           "Home",
           style: TextStyle(color: Colors.black),
@@ -1585,7 +1582,7 @@ class _MainPageState extends State<MainPage> {
                                     onPressed: () {
                                       String commentText = _getCommentController(postId).text;
                                       uploadComment(commentText, postId,currentUserId);
-                                      Fluttertoast.showToast(msg: commentText);
+
                                       _getCommentController(postId).clear();
                                     },
                                     icon: const Icon(Icons.send, size: 22),
@@ -1653,27 +1650,68 @@ class _TasksPageState extends State<TasksPage> {
   }
 }
 
-class MeetingsPage extends StatefulWidget {
-  const MeetingsPage({super.key});
+class Maps extends StatefulWidget {
+  const Maps({super.key});
 
   @override
-  State<MeetingsPage> createState() => _MeetingsPageState();
+  State<Maps> createState() => _MapsState();
 }
 
-class _MeetingsPageState extends State<MeetingsPage> {
+class _MapsState extends State<Maps> {
+  final TextEditingController searchController=TextEditingController();
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return  Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.grey[500],
-        title: Text("Announcements",style:TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-        ),),
+        backgroundColor: Colors.grey[200],
+        title: Text("Map",style: TextStyle(fontWeight: FontWeight.bold,color:Colors.black),),
+
       ),
+      body:Stack(children: [
+                    Container(
+
+                      height: double.infinity,
+                      width:double.infinity,
+                      decoration:BoxDecoration(
+                        image:DecorationImage(image:AssetImage("images/maps.jpg"),fit:BoxFit.cover),
+                      ),
+                    ),
+        Container(
+          height: double.infinity,
+          width:double.infinity,
+          decoration:BoxDecoration(
+            color:Colors.grey[200]?.withOpacity(0.5),
+          ),
+        ),
+        Center(
+        child:Column(
+          children: [
+            const SizedBox(height:25),
+            Padding(padding:EdgeInsets.all(20),
+              child: TextField(
+                controller: searchController,
+              decoration:InputDecoration(
+                suffixIcon: IconButton(onPressed: (){
+                  Fluttertoast.showToast(msg: "search clicked");
+                  searchController.clear();
+
+                },
+                  icon: Icon(Icons.search,color: Colors.indigo[900],),),
+                hintText: "Search for a building.....",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                )
+              ),
+            ),
+    ),
+          ],
+        ),
+        ),
+      ],)
     );
   }
 }
+
 
 
 class HelpPage extends StatefulWidget {
