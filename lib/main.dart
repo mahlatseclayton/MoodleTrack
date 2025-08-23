@@ -1286,7 +1286,7 @@ class _MainPageState extends State<MainPage> {
             Navigator.push(context, MaterialPageRoute(builder: (_) => TasksPage()));
           } else if (value == 1) {
             //meetings
-            Navigator.push(context, MaterialPageRoute(builder: (_) => Maps()));
+            Navigator.push(context, MaterialPageRoute(builder: (_) => Planner()));
           } else if (value == 2) {
             // helpline
             Navigator.push(context, MaterialPageRoute(builder: (_) => HelpPage()));
@@ -1302,7 +1302,7 @@ class _MainPageState extends State<MainPage> {
             ),
           ),
           BottomNavigationBarItem(
-            label: 'Map',
+            label: 'Planner',
             backgroundColor: Colors.red,
             icon:  Icon(Icons.map, color: Colors.indigo[900]),
           ),
@@ -1650,92 +1650,8 @@ class _TasksPageState extends State<TasksPage> {
   }
 }
 
-class Maps extends StatefulWidget {
-  const Maps({super.key});
 
-  @override
-  State<Maps> createState() => _MapsState();
-}
 
-class _MapsState extends State<Maps> {
-  final TextEditingController searchController=TextEditingController();
-  @override
-  Widget build(BuildContext context) {
-    return  Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.grey[200],
-        title: Text("Map",style: TextStyle(fontWeight: FontWeight.bold,color:Colors.black),),
-
-      ),
-      body:Stack(children: [
-                    Container(
-
-                      height: double.infinity,
-                      width:double.infinity,
-                      decoration:BoxDecoration(
-                        image:DecorationImage(image:AssetImage("images/maps.jpg"),fit:BoxFit.cover),
-                      ),
-                    ),
-        Container(
-          height: double.infinity,
-          width:double.infinity,
-          decoration:BoxDecoration(
-            color:Colors.grey[200]?.withOpacity(0.5),
-          ),
-        ),
-        Center(
-        child:Column(
-          children: [
-            const SizedBox(height:25),
-            Padding(padding:EdgeInsets.all(20),
-              child: TextField(
-                controller: searchController,
-              decoration:InputDecoration(
-                suffixIcon: IconButton(onPressed: (){
-                  Navigator.push(context, MaterialPageRoute(builder: (_)=>myMap()));
-                  searchController.clear();
-
-                },
-                  icon: Icon(Icons.search,color: Colors.indigo[900],),),
-                hintText: "Search for a building.....",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                )
-              ),
-            ),
-    ),
-          ],
-        ),
-        ),
-      ],)
-    );
-  }
-}
-
-class myMap extends StatefulWidget {
-  const myMap({super.key});
-
-  @override
-  State<myMap> createState() => _myMapState();
-}
-
-class _myMapState extends State<myMap> {
-  @override
-  Widget  build(BuildContext context) {
-
-    return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.grey[200],
-          title: Text(
-            "Locate building",
-            style: TextStyle(color: Colors.black),
-          ),
-        ),
-        body:Center(child:Text("Map location"),),
-
-    );
-  }
-}
 
 class HelpPage extends StatefulWidget {
   const HelpPage({super.key});
@@ -2042,5 +1958,244 @@ class _PostCommentsPageState extends State<PostCommentsPage> {
   }
 
 }
+class Planner extends StatefulWidget {
+  const Planner({super.key});
+
+  @override
+  State<Planner> createState() => _PlannerState();
+}
+
+class _PlannerState extends State<Planner> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      floatingActionButton: FloatingActionButton(onPressed: (){
+            Navigator.push(context, MaterialPageRoute(builder: (_)=>addEvent()));
+      },
+      backgroundColor: Colors.indigo[900],
+      child: Icon(
+        Icons.add,
+        color: Colors.white,
+      ),),
+      appBar: AppBar(
+        title: Text("Planner"),
+        backgroundColor: Colors.grey[200],
+      ),
+      body: ListView.builder(
+        itemCount: 8,
+        padding: EdgeInsets.all(12),
+        itemBuilder: (context, index) {
+          final String eventName = "Assignment 3";
+          final String eventDescription = "I have to submit this.";
+          final DateTime eventDate = DateTime.now();
+          final String startTime = "17:00";
+          final String endTime = "18:00";
+
+          return Card(
+            margin: EdgeInsets.symmetric(vertical: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 3,
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        eventName,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {},
+                        icon: Icon(Icons.delete, color: Colors.red),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.calendar_today, size: 18, color: Colors.indigo[900]),
+                      SizedBox(width: 6),
+                      Text(
+                        "${eventDate.day}/${eventDate.month}/${eventDate.year}",
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.access_time, size: 18, color: Colors.indigo[900]),
+                          SizedBox(width: 4),
+                          Text(
+                            "Start: $startTime",
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Icon(Icons.access_time, size: 18, color: Colors.indigo[900]),
+                          SizedBox(width: 4),
+                          Text(
+                            "End: $endTime",
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    eventDescription,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+
+    );
+  }
+}
+class addEvent extends StatefulWidget {
+  const addEvent({super.key});
+
+  @override
+  State<addEvent> createState() => _addEventState();
+}
+
+class _addEventState extends State<addEvent> {
+  Map<String, bool> daysSelected = {
+    "Monday": false,
+    "Tuesday": false,
+    "Wednesday": false,
+    "Thursday": false,
+    "Friday": false,
+    "Saturday": false,
+    "Sunday": false,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Add Event"),
+        backgroundColor: Colors.grey[200],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Event Name
+            TextField(
+              decoration: InputDecoration(
+                labelText: "Event Name",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 12),
+
+            // Description
+            TextField(
+              decoration: InputDecoration(
+                labelText: "Description",
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
+            ),
+            SizedBox(height: 12),
+
+            // Start Time
+            TextField(
+              decoration: InputDecoration(
+                labelText: "Start Time",
+                border: OutlineInputBorder(),
+                hintText: "HH:MM",
+              ),
+            ),
+            SizedBox(height: 12),
+
+            // End Time
+            TextField(
+              decoration: InputDecoration(
+                labelText: "End Time",
+                border: OutlineInputBorder(),
+                hintText: "HH:MM",
+              ),
+            ),
+            SizedBox(height: 12),
+
+            // Date of Event
+            TextField(
+              decoration: InputDecoration(
+                labelText: "Date of Event",
+                border: OutlineInputBorder(),
+                hintText: "DD/MM/YYYY",
+                prefixIcon: Icon(Icons.calendar_today),
+              ),
+            ),
+            SizedBox(height: 24),
+
+            // Day selection with checkboxes
+            Text(
+              "Select Reminder Days:",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Column(
+              children: daysSelected.keys.map((day) {
+                return CheckboxListTile(
+                  title: Text(day),
+                  value: daysSelected[day],
+                  onChanged: (bool? value) {
+                    setState(() {
+                      daysSelected[day] = value!;
+                    });
+                  },
+                  controlAffinity: ListTileControlAffinity.leading,
+                );
+              }).toList(),
+            ),
+            SizedBox(height: 24),
+
+            // Add Button
+            ElevatedButton(
+              onPressed: () {
+                // Action to add event to DB (UI only)
+              },
+              style: ElevatedButton.styleFrom(
+                minimumSize: Size(double.infinity, 50),
+                backgroundColor: Colors.indigo[800],
+              ),
+              child: Text("Add Event",style: TextStyle(color:Colors.white),),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+
+
+
 
 
