@@ -1268,10 +1268,52 @@ class _MainPageState extends State<MainPage> {
       });
     }
   }
-
+  Future<void> logoutMoodle() async {
+    await TokenService.clearToken(); }
+  Future<void>logOutFirebase()async{
+    await FirebaseAuth.instance.signOut();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: Drawer(
+        child: ListView(
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+              ),
+              child: Column(children:[
+                CircleAvatar(
+                  radius: 40,
+                  backgroundImage: AssetImage('assets/map.jpg'),
+                ),
+                SizedBox(height:14),
+                Text("Hello Mahlatse")],),
+            ),
+            ListTile(
+              leading:Icon(Icons.logout,color: Colors.indigo[900],),
+                  title:Text("Log out"),
+              onTap: (){
+                logOutFirebase();
+                logoutMoodle();
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => Homepage()),
+                      (Route<dynamic> route) => false,
+                );
+              },
+            ),
+            ListTile(
+              leading:Icon(Icons.person,color:Colors.indigo[900],),
+              title:Text("Developers"),
+              onTap: (){
+                //
+              },
+            )
+          ],
+        ),
+      ),
       resizeToAvoidBottomInset: true,
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
@@ -2081,16 +2123,6 @@ class addEvent extends StatefulWidget {
 }
 
 class _addEventState extends State<addEvent> {
-  Map<String, bool> daysSelected = {
-    "Monday": false,
-    "Tuesday": false,
-    "Wednesday": false,
-    "Thursday": false,
-    "Friday": false,
-    "Saturday": false,
-    "Sunday": false,
-  };
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -2098,7 +2130,7 @@ class _addEventState extends State<addEvent> {
         title: Text("Add Event"),
         backgroundColor: Colors.grey[200],
       ),
-      body: SingleChildScrollView(
+      body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -2153,28 +2185,6 @@ class _addEventState extends State<addEvent> {
             ),
             SizedBox(height: 24),
 
-            // Day selection with checkboxes
-            Text(
-              "Select Reminder Days:",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Column(
-              children: daysSelected.keys.map((day) {
-                return CheckboxListTile(
-                  title: Text(day),
-                  value: daysSelected[day],
-                  onChanged: (bool? value) {
-                    setState(() {
-                      daysSelected[day] = value!;
-                    });
-                  },
-                  controlAffinity: ListTileControlAffinity.leading,
-                );
-              }).toList(),
-            ),
-            SizedBox(height: 24),
-
             // Add Button
             ElevatedButton(
               onPressed: () {
@@ -2184,7 +2194,10 @@ class _addEventState extends State<addEvent> {
                 minimumSize: Size(double.infinity, 50),
                 backgroundColor: Colors.indigo[800],
               ),
-              child: Text("Add Event",style: TextStyle(color:Colors.white),),
+              child: Text(
+                "Add Event",
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ),
@@ -2192,6 +2205,7 @@ class _addEventState extends State<addEvent> {
     );
   }
 }
+
 
 
 
