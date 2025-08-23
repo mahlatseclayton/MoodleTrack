@@ -20,7 +20,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 //   );
 //   runApp(const MyApp());
 // }
-import 'dart:io';  // Add this import
+import 'dart:io';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -1692,7 +1692,7 @@ class _MapsState extends State<Maps> {
                 controller: searchController,
               decoration:InputDecoration(
                 suffixIcon: IconButton(onPressed: (){
-                  Fluttertoast.showToast(msg: "search clicked");
+                  Navigator.push(context, MaterialPageRoute(builder: (_)=>myMap()));
                   searchController.clear();
 
                 },
@@ -1712,7 +1712,30 @@ class _MapsState extends State<Maps> {
   }
 }
 
+class myMap extends StatefulWidget {
+  const myMap({super.key});
 
+  @override
+  State<myMap> createState() => _myMapState();
+}
+
+class _myMapState extends State<myMap> {
+  @override
+  Widget  build(BuildContext context) {
+
+    return Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.grey[200],
+          title: Text(
+            "Locate building",
+            style: TextStyle(color: Colors.black),
+          ),
+        ),
+        body:Center(child:Text("Map location"),),
+
+    );
+  }
+}
 
 class HelpPage extends StatefulWidget {
   const HelpPage({super.key});
