@@ -1,3 +1,4 @@
+// The plugins block MUST stay at the top of the file.
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
@@ -14,6 +15,8 @@ android {
     ndkVersion = "27.0.12077973"
 
     compileOptions {
+        // *** CORRECTED THIS LINE ***: Enable core library desugaring
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
@@ -31,6 +34,9 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // *** CORRECTED THIS LINE ***: Required for desugaring
+        multiDexEnabled = true
     }
 
     buildTypes {
@@ -40,6 +46,12 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+}
+
+// *** ADD THIS ENTIRE DEPENDENCIES BLOCK ***
+dependencies {
+    // Add the core library desugaring dependency
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
 
 flutter {

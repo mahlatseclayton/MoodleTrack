@@ -4,30 +4,30 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/token_service.dart';
 import 'package:http/http.dart' as http;
+import 'package:learning_app/services/Notification.dart';
 import 'dart:convert';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:learning_app/screens/notifications_screen.dart';
 import 'AppData.dart';
 import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-// ...
-// Future<void> main() async {
-//
-//   WidgetsFlutterBinding.ensureInitialized();
-//   await Firebase.initializeApp(
-//     options: DefaultFirebaseOptions.currentPlatform,
-//   );
-//   runApp(const MyApp());
-// }
+
 import 'dart:io';
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print("Background message: ${message.messageId}");
+}
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
+    WidgetsFlutterBinding.ensureInitialized();
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     print('Firebase initialized!');
   } catch (e) {
     print('Firebase failed to initialize: $e');
@@ -35,14 +35,30 @@ Future<void> main() async {
 
   runApp(const AuthCheck());
 }
-
-class AuthCheck extends StatelessWidget {
+class AuthCheck extends StatefulWidget {
   const AuthCheck({super.key});
 
   @override
+  State<AuthCheck> createState() => _AuthCheckState();
+}
+
+class _AuthCheckState extends State<AuthCheck> {
+  final _notificationService = NotificationService(); // <-- your service class
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize notifications
+    _notificationService.initNotifications(context);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return  MaterialApp(
       debugShowCheckedModeBanner: false,
+      routes: {
+        "/notifications": (context) => const Notifications_screen(),
+      },
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
@@ -52,10 +68,8 @@ class AuthCheck extends StatelessWidget {
             );
           }
           if (snapshot.hasData) {
-            // User already logged in
             return MainPage();
           } else {
-            // New user (not logged in yet)
             return const Homepage();
           }
         },
@@ -210,6 +224,33 @@ class _LoginPageState extends State<LoginPage> {
   bool isCustomer = true; //student
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passController = TextEditingController();
+  Future<void> saveFcmTokenOnLogin() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final _messaging = FirebaseMessaging.instance;
+    String? token = await _messaging.getToken();
+    if (token == null) return;
+
+    final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final doc = await userDocRef.get();
+
+    if (!doc.exists) {
+      // User document does not exist, create it with token
+      await userDocRef.set({'fcmToken': token}, SetOptions(merge: true));
+      print("FCM token saved for new user: $token");
+    } else {
+      final existingToken = doc.data()?['fcmToken'];
+      if (existingToken != token) {
+        // Token is missing or different, update it
+        await userDocRef.set({'fcmToken': token}, SetOptions(merge: true));
+        print("FCM token updated: $token");
+      } else {
+        print("FCM token already exists and is the same.");
+      }
+    }
+  }
+
   Future<String?> _getMoodleToken(String username, String password) async {
     try {
       final response = await http.get(
@@ -477,7 +518,30 @@ class _LoginPageState extends State<LoginPage> {
                         const SizedBox(height: 15),
                         // Sign In button
                         ElevatedButton.icon(
-                          onPressed: isLoading ? null : _login,
+                          onPressed: isLoading
+                              ? null
+                              : () async {
+                            setState(() {
+                              isLoading = true;
+                            });
+
+                            try {
+                              // Wait for login to complete
+                              await _login();
+
+                              // Save FCM token after login
+                              await saveFcmTokenOnLogin();
+                            } catch (e) {
+                              print("Login or FCM error: $e");
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text("Login failed: $e")),
+                              );
+                            } finally {
+                              setState(() {
+                                isLoading = false;
+                              });
+                            }
+                          },
                           icon: isLoading
                               ? SizedBox(
                             width: 20,
@@ -495,7 +559,8 @@ class _LoginPageState extends State<LoginPage> {
                             textStyle: const TextStyle(fontSize: 18),
                             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                           ),
-                        ),
+                        )
+
                       ],
                     ),
                   ),
@@ -537,6 +602,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       fontSize: 16,
     );
   }
+
   bool verifyForm(){
     if(nameController.text.isEmpty||passController.text.isEmpty ||cpassController.text.isEmpty|| surNameController.text.isEmpty||emailController.text.isEmpty){
       return false;
@@ -583,12 +649,15 @@ bool spaceCheck(String x){
     }
     return true;
 }
+
   Future<void> registerUser({
     required String uid,
     required String email,
     required String fullName,
     required String surName,
   }) async {
+
+
     await FirebaseFirestore.instance.collection('users').doc(uid).set({
       'uid': uid,
       'email': email,
@@ -2206,7 +2275,19 @@ class _addEventState extends State<addEvent> {
   }
 }
 
+class Notifications_screen extends StatelessWidget {
+  const Notifications_screen({super.key});
 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Notifications")),
+      body: const Center(
+        child: Text("Opened from a notification"),
+      ),
+    );
+  }
+}
 
 
 
