@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -2077,6 +2079,7 @@ class Planner extends StatefulWidget {
 }
 
 class _PlannerState extends State<Planner> {
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -2092,94 +2095,214 @@ class _PlannerState extends State<Planner> {
         title: Text("Planner"),
         backgroundColor: Colors.grey[200],
       ),
-      body: ListView.builder(
-        itemCount: 8,
-        padding: EdgeInsets.all(12),
-        itemBuilder: (context, index) {
-          final String eventName = "Assignment 3";
-          final String eventDescription = "I have to submit this.";
-          final DateTime eventDate = DateTime.now();
-          final String startTime = "17:00";
-          final String endTime = "18:00";
+      body: StreamBuilder<QuerySnapshot>(
+        stream:FirebaseFirestore.instance.collection('events').orderBy("date",descending: true).snapshots(),
 
-          return Card(
-            margin: EdgeInsets.symmetric(vertical: 8),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 3,
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(child: Text("No events found"));
+          }
+
+          final docs = snapshot.data!.docs;
+
+          return ListView.builder(
+              itemCount: docs.length,
+              padding: EdgeInsets.all(12),
+              itemBuilder: (context, index) {
+                final data = docs[index].data() as Map<String, dynamic>;
+                final String eventName = data['eventName'];
+                final String eventDescription = data['description'];
+                final Timestamp eventDate = data['date'];
+                final String endTime = data["endTime"];
+                final DateTime date = eventDate.toDate();
+                String formattedDate =
+                    "${date.day}/${date.month}/${date.year}";
+                String formattedTime =
+                    "${date.hour.toString().padLeft(2, '0')}:${date.minute
+                    .toString().padLeft(2, '0')}";
+
+                return Container(
+                  margin: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  child: Stack(
                     children: [
-                      Text(
-                        eventName,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                      // Main Card
+                      Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        elevation: 8,
+                        shadowColor: Colors.indigo.withOpacity(0.3),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            gradient: LinearGradient(
+                              colors: [Colors.white, Colors.indigo.shade50],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          padding: EdgeInsets.all(18),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Event Name & Delete
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      eventName,
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.indigo[900],
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    onPressed: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (_) => AlertDialog(
+                                          title: const Text("Delete event"),
+                                          content: const Text("Are you sure you want to delete this event?"),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(context),
+                                              child: const Text("Cancel"),
+                                            ),
+                                            TextButton(
+                                              onPressed: () async {
+                                                FirebaseFirestore.instance
+                                                    .collection('events')
+                                                    .doc(docs[index].id)
+                                                    .delete();
+
+
+                                                Navigator.pop(context);
+                                              },
+                                              child: const Text("Delete", style: TextStyle(color: Colors.red)),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                    icon: Icon(Icons.delete, color: Colors.redAccent),
+                                    tooltip: "Delete Event",
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 10),
+
+                              // Date Row
+                              Row(
+                                children: [
+                                  Icon(Icons.calendar_today,
+                                      size: 20, color: Colors.indigo[700]),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    formattedDate,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.grey[800],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 8),
+
+                              // Time Row
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.access_time,
+                                          size: 20, color: Colors.indigo[700]),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        "Start: $formattedTime",
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          color: Colors.grey[700],
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.access_time,
+                                          size: 20, color: Colors.indigo[700]),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        "End: $endTime",
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          color: Colors.grey[700],
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 14),
+
+                              // Description Box
+                              Container(
+                                width: double.infinity,
+                                padding: EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: Colors.indigo.withOpacity(0.07),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Text(
+                                  eventDescription,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey[800],
+                                    fontStyle: FontStyle.italic,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      IconButton(
-                        onPressed: () {},
-                        icon: Icon(Icons.delete, color: Colors.red),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.calendar_today, size: 18, color: Colors.indigo[900]),
-                      SizedBox(width: 6),
-                      Text(
-                        "${eventDate.day}/${eventDate.month}/${eventDate.year}",
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.access_time, size: 18, color: Colors.indigo[900]),
-                          SizedBox(width: 4),
-                          Text(
-                            "Start: $startTime",
-                            style: TextStyle(color: Colors.grey[600]),
+
+                      // Timeline / Event Indicator Strip
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: 6,
+                          decoration: BoxDecoration(
+                            color: Colors.indigo, // you can change based on urgency
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(20),
+                              bottomLeft: Radius.circular(20),
+                            ),
                           ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Icon(Icons.access_time, size: 18, color: Colors.indigo[900]),
-                          SizedBox(width: 4),
-                          Text(
-                            "End: $endTime",
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 12),
-                  Text(
-                    eventDescription,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[800],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                );
+
+
+              }
           );
-        },
-      ),
+        }
+
+    ),
 
     );
   }
@@ -2192,6 +2315,45 @@ class addEvent extends StatefulWidget {
 }
 
 class _addEventState extends State<addEvent> {
+  final TextEditingController date=TextEditingController();
+  final TextEditingController startTime=TextEditingController();
+  final TextEditingController endTime=TextEditingController();
+  final TextEditingController description=TextEditingController();
+  final TextEditingController eventName=TextEditingController();
+  final _formkey=GlobalKey<FormState>();
+  DateTime parseDateTime(String dateStr, String timeStr) {
+    // Split date
+    final parts = dateStr.split("/");
+    int day = int.parse(parts[0]);
+    int month = int.parse(parts[1]);
+    int year = int.parse(parts[2]);
+
+    // Split time
+    final timeParts = timeStr.split(":");
+    int hour = int.parse(timeParts[0]);
+    int minute = int.parse(timeParts[1]);
+
+    // Create DateTime
+    return DateTime(year, month, day, hour, minute);
+  }
+
+  Future<void>uploadEvent(String eventName,String description,String dateStr,String timeStr,String endTime) async{
+      final userId=FirebaseAuth.instance.currentUser?.uid;
+      final date=parseDateTime(dateStr, timeStr);
+      try {
+        await FirebaseFirestore.instance.collection('events').add({
+          'userId': userId,
+          'startTime': timeStr,
+          'endTime': endTime,
+          'date': date,
+          'description': description,
+          'eventName': eventName??"Unknown",
+        });
+        Fluttertoast.showToast(msg: "event added");
+      }catch(e){
+        Fluttertoast.showToast(msg: "add event failed");
+      }
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -2201,75 +2363,136 @@ class _addEventState extends State<addEvent> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Event Name
-            TextField(
-              decoration: InputDecoration(
-                labelText: "Event Name",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 12),
+        child:Form(
+          key:_formkey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child:   Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
 
-            // Description
-            TextField(
-              decoration: InputDecoration(
-                labelText: "Description",
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-            ),
-            SizedBox(height: 12),
+              TextFormField(
+                validator:(value){
 
-            // Start Time
-            TextField(
-              decoration: InputDecoration(
-                labelText: "Start Time",
-                border: OutlineInputBorder(),
-                hintText: "HH:MM",
+                },
+                controller: eventName,
+                decoration: InputDecoration(
+                  labelText: "Event Name",
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
-            SizedBox(height: 12),
+              SizedBox(height: 12),
 
-            // End Time
-            TextField(
-              decoration: InputDecoration(
-                labelText: "End Time",
-                border: OutlineInputBorder(),
-                hintText: "HH:MM",
+              TextFormField(
+                validator:(value){
+                    if(value==null ||value.isEmpty){
+                      return "description required";
+                    }
+                },
+                controller:description,
+                decoration: InputDecoration(
+                  labelText: "Description",
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
               ),
-            ),
-            SizedBox(height: 12),
+              SizedBox(height: 12),
 
-            // Date of Event
-            TextField(
-              decoration: InputDecoration(
-                labelText: "Date of Event",
-                border: OutlineInputBorder(),
-                hintText: "DD/MM/YYYY",
-                prefixIcon: Icon(Icons.calendar_today),
-              ),
-            ),
-            SizedBox(height: 24),
+              TextFormField(
+                validator:(value){
+                  if(value==null || value.isEmpty){
+                    return "Start time is required";
+                  }
+                  if(!RegExp(r'^(?:[01]\d|2[0-3]):[0-5]\d$').hasMatch(value!) ){
+                    return "Invalid time format";
+                  }
+                  return null;
 
-            // Add Button
-            ElevatedButton(
-              onPressed: () {
-                // Action to add event to DB (UI only)
-              },
-              style: ElevatedButton.styleFrom(
-                minimumSize: Size(double.infinity, 50),
-                backgroundColor: Colors.indigo[800],
+
+                },
+                controller:startTime,
+                decoration: InputDecoration(
+                  labelText: "Start Time",
+                  border: OutlineInputBorder(),
+                  hintText: "HH:MM",
+                ),
               ),
-              child: Text(
-                "Add Event",
-                style: TextStyle(color: Colors.white),
+              SizedBox(height: 12),
+
+
+              TextFormField(
+                validator:(value){
+                  if(value==null || value.isEmpty){
+                    return "End time is required";
+                  }
+                  if(!RegExp(r'^(?:[01]\d|2[0-3]):[0-5]\d$').hasMatch(value!) ){
+                    return "Invalid time ";
+                  }
+                  return null;
+
+                },
+                controller:endTime,
+                decoration: InputDecoration(
+                  labelText: "End Time",
+                  border: OutlineInputBorder(),
+                  hintText: "HH:MM",
+                ),
               ),
-            ),
-          ],
-        ),
+              SizedBox(height: 12),
+
+
+              TextFormField(
+                validator:(value){
+                  if(value==null || value.isEmpty){
+                    return "Date is required";
+                  }
+                    if(!RegExp(r'^\d{2}/\d{1,2}/\d{4}$').hasMatch(value!) ){
+                          return "Invalid date format";
+                    }
+                    return null;
+                },
+                controller:date,
+                decoration: InputDecoration(
+                  labelText: "Date of Event",
+                  border: OutlineInputBorder(),
+                  hintText: "DD/MM/YYYY",
+                  prefixIcon: Icon(Icons.calendar_today),
+                ),
+              ),
+              SizedBox(height: 24),
+
+
+              ElevatedButton(
+                onPressed: () {
+                  if(_formkey.currentState!.validate()){
+                    final event_name=eventName.text.toString();
+                    final str_time=startTime.text.toString();
+                    final end_time=endTime.text.toString();
+                    final desc=description.text.toString();
+                    final dt=date.text.toString();
+                    uploadEvent( event_name, desc, dt, str_time, end_time);
+                    eventName.clear();
+                    description.clear();
+                    startTime.clear();
+                    endTime.clear();
+                    date.clear();
+                    _formkey.currentState?.reset();
+
+                  }
+
+                },
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 50),
+                  backgroundColor: Colors.indigo[800],
+                ),
+                child: Text(
+                  "Add Event",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ) ,
+
       ),
     );
   }
