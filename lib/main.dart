@@ -1243,6 +1243,18 @@ class _MainPageState extends State<MainPage> {
       'hiddenPosts': FieldValue.arrayUnion([postId]),
     });
   }
+  String? username;
+
+  @override
+  void initState() {
+    super.initState();
+    loadUsername();
+  }
+
+  void loadUsername() async {
+    username = await getUsername();
+    setState(() {});
+  }
 
   final TextEditingController postController = TextEditingController();
   // Add a map to store controllers for each post
@@ -1344,47 +1356,112 @@ class _MainPageState extends State<MainPage> {
   Future<void>logOutFirebase()async{
     await FirebaseAuth.instance.signOut();
   }
+  Future<String?> getUsername() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return null;
+
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('uid', isEqualTo: uid)
+        .limit(1)
+        .get();
+
+    if (querySnapshot.docs.isNotEmpty) {
+      return querySnapshot.docs.first.get('fullName') as String;
+    } else {
+      return null; // user not found
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       drawer: Drawer(
-        child: ListView(
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
+        child: Container(
+          color: Colors.grey[100],
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    height: 180,
+                    decoration: BoxDecoration(
+                      color: Colors.indigo[900],
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(30),
+                        bottomRight: Radius.circular(30),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 120,
+                    left: 20,
+                    child: CircleAvatar(
+                      radius: 45,
+                      backgroundColor: Colors.white,
+                      backgroundImage: AssetImage('images/mentee.jpg'),
+                    ),
+                  ),
+                  Positioned(
+                    top: 140,
+                    left: 120,
+                    child: FutureBuilder<String?>(
+                      future: getUsername(),
+                      builder: (context, snapshot) {
+                        String name = "Hello User";
+                        if (snapshot.connectionState == ConnectionState.done && snapshot.data != null) {
+                          name = "Hello ${snapshot.data}";
+                        }
+                        return Text(
+                          name,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
-              child: Column(children:[
-                CircleAvatar(
-                  radius: 40,
-                  backgroundImage: AssetImage('assets/map.jpg'),
+              SizedBox(height: 40),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Column(
+                  children: [
+                    _DrawerTile(
+                      icon: Icons.person,
+                      title: "About Us",
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => AboutUsPage()));
+                      },
+                    ),
+                    _DrawerTile(
+                      icon: Icons.logout,
+                      title: "Log Out",
+                      onTap: () {
+                        logOutFirebase();
+                        logoutMoodle();
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => Homepage()),
+                              (route) => false,
+                        );
+                      },
+                    ),
+                  ],
                 ),
-                SizedBox(height:14),
-                Text("Hello Mahlatse")],),
-            ),
-            ListTile(
-              leading:Icon(Icons.logout,color: Colors.indigo[900],),
-                  title:Text("Log out"),
-              onTap: (){
-                logOutFirebase();
-                logoutMoodle();
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => Homepage()),
-                      (Route<dynamic> route) => false,
-                );
-              },
-            ),
-            ListTile(
-              leading:Icon(Icons.person,color:Colors.indigo[900],),
-              title:Text("Developers"),
-              onTap: (){
-                //
-              },
-            )
-          ],
+              )
+            ],
+          ),
         ),
       ),
+
       resizeToAvoidBottomInset: true,
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
@@ -1400,9 +1477,6 @@ class _MainPageState extends State<MainPage> {
           } else if (value == 1) {
             //meetings
             Navigator.push(context, MaterialPageRoute(builder: (_) => Planner()));
-          } else if (value == 2) {
-            // helpline
-            Navigator.push(context, MaterialPageRoute(builder: (_) => HelpPage()));
           }
         },
         items: [
@@ -1419,10 +1493,7 @@ class _MainPageState extends State<MainPage> {
             backgroundColor: Colors.red,
             icon:  Icon(Icons.map, color: Colors.indigo[900]),
           ),
-          BottomNavigationBarItem(
-            label: 'HelpLine',
-            icon: Icon(Icons.help, color: Colors.indigo[900]),
-          ),
+
         ],
       ),
       appBar: AppBar(
@@ -1762,32 +1833,6 @@ class _TasksPageState extends State<TasksPage> {
     );
   }
 }
-
-
-
-
-class HelpPage extends StatefulWidget {
-  const HelpPage({super.key});
-
-  @override
-  State<HelpPage> createState() => _HelpPageState();
-}
-
-class _HelpPageState extends State<HelpPage> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.grey[500],
-        title: Text("HelpLine",style:TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-        ),),
-      ),
-    );
-  }
-}
-
 
 class PostCommentsPage extends StatefulWidget {
   final String postId;
@@ -2512,6 +2557,232 @@ class Notifications_screen extends StatelessWidget {
   }
 }
 
+
+
+class AboutUsPage extends StatelessWidget {
+  final String appName;
+  const AboutUsPage({super.key, this.appName = "MentorLink"});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("About $appName"),
+        backgroundColor: Colors.grey[200],
+        foregroundColor: Colors.indigo[900],
+        elevation: 0,
+      ),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 680),
+            child: ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                Text(
+                  appName,
+                  style: theme.textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: Colors.indigo[900],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Your all-in-one student companion at Wits. We built this platform to make student life simpler, more connected, and less stressful.",
+                  style: theme.textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 24),
+                Card(
+                  elevation: 2,
+                  shadowColor: Colors.indigo[100],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "What we offer",
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: Colors.indigo[900],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _FeatureRow(
+                          icon: Icons.notifications_active_outlined,
+                          title: "Real-time Updates",
+                          subtitle: "Instant announcements and upcoming events as they happen.",
+                          color: Colors.indigo[900]!,
+                        ),
+                        _FeatureRow(
+                          icon: Icons.forum_outlined,
+                          title: "Anonymous Posting",
+                          subtitle: "Share questions and concerns privately and get helpful responses.",
+                          color: Colors.indigo[900]!,
+                        ),
+                        _FeatureRow(
+                          icon: Icons.event_available_outlined,
+                          title: "Moodle Due Dates",
+                          subtitle: "All your course deadlines organized in one clear view.",
+                          color: Colors.indigo[900]!,
+                        ),
+                        _FeatureRow(
+                          icon: Icons.volunteer_activism_outlined,
+                          title: "Mentorship Support",
+                          subtitle: "A safe space for mentees to connect, learn, and grow.",
+                          color: Colors.indigo[900]!,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  "Why we exist",
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: Colors.indigo[900],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "$appName brings your campus life together so you can focus on what matters most: your success.",
+                  style: theme.textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 24),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: const [
+                    _Tag(label: "Events"),
+                    _Tag(label: "Announcements"),
+                    _Tag(label: "Anonymous Q&A"),
+                    _Tag(label: "Moodle Deadlines"),
+                    _Tag(label: "Mentorship"),
+                  ],
+                ),
+                const SizedBox(height: 32),
+                Divider(color: theme.colorScheme.outlineVariant),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: Colors.indigo[900],
+                      child: Text(
+                        "MC",
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        "Developed by Mahlatse Clayton Maredi",
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: Colors.indigo[900],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FeatureRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  const _FeatureRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 28, color: color),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: color)),
+                const SizedBox(height: 2),
+                Text(subtitle, style: theme.textTheme.bodyMedium),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Tag extends StatelessWidget {
+  final String label;
+  const _Tag({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.indigo[50],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.indigo[100]!),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: Colors.indigo[900], fontWeight: FontWeight.w500),
+      ),
+    );
+  }
+}
+
+class _DrawerTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  const _DrawerTile({required this.icon, required this.title, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 6),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      elevation: 2,
+      child: ListTile(
+        leading: Icon(icon, color: Colors.indigo[900]),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.w600)),
+        onTap: onTap,
+      ),
+    );
+  }
+}
 
 
 
