@@ -1403,7 +1403,7 @@ class _MainPageState extends State<MainPage> {
                     child: CircleAvatar(
                       radius: 45,
                       backgroundColor: Colors.white,
-                      backgroundImage: AssetImage('images/mentee.jpg'),
+                      backgroundImage:AssetImage('images/user.png'),
                     ),
                   ),
                   Positioned(
