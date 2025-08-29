@@ -1378,6 +1378,19 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
 
     return Scaffold(
+      // floatingActionButton: Container(
+      //   margin: EdgeInsets.only(bottom: 10, right: 10),
+      //   child: FloatingActionButton.extended(
+      //     onPressed: () {
+      //       // action
+      //     },
+      //     backgroundColor: Colors.blue,
+      //     icon: Icon(Icons.smart_toy, color: Colors.white,size: 32,),
+      //     label: Text("Ask Bot",style:TextStyle(color:Colors.black),),
+      //     elevation: 8,
+      //   ),
+      // ),
+
       drawer: Drawer(
         child: Container(
           color: Colors.grey[100],
@@ -2779,6 +2792,23 @@ class _DrawerTile extends StatelessWidget {
         leading: Icon(icon, color: Colors.indigo[900]),
         title: Text(title, style: TextStyle(fontWeight: FontWeight.w600)),
         onTap: onTap,
+      ),
+    );
+  }
+}
+class Questionaires extends StatefulWidget {
+  const Questionaires({super.key});
+
+  @override
+  State<Questionaires> createState() => _QuestionairesState();
+}
+
+class _QuestionairesState extends State<Questionaires> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Q&A page"),
       ),
     );
   }
