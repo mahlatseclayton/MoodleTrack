@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import '../services/token_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:learning_app/services/Notification.dart';
@@ -11,12 +12,20 @@ import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:learning_app/screens/notifications_screen.dart';
 import 'AppData.dart';
+import 'calendar_provider.dart';
 import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
+import 'package:provider/provider.dart';
+
+
+import 'moodle_api_service.dart';
+import 'moodle_calendar_widget.dart';
 
 import 'dart:io';
+
+import 'moodle_calendar_widget.dart';
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   print("Background message: ${message.messageId}");
@@ -1233,129 +1242,24 @@ class MainPage extends StatefulWidget {
   State<MainPage> createState() => _MainPageState();
 }
 class _MainPageState extends State<MainPage> {
-  bool isPost = true;
-
-  Future<void> hidePostForUser(String postId) async {
-    final userId = FirebaseAuth.instance.currentUser!.uid;
-    final userRef = FirebaseFirestore.instance.collection('users').doc(userId);
-
-    await userRef.update({
-      'hiddenPosts': FieldValue.arrayUnion([postId]),
-    });
+  Future<void> logoutMoodle() async {
+    await TokenService.clearToken();
   }
-  String? username;
+
+  Future<void> logOutFirebase() async {
+    await FirebaseAuth.instance.signOut();
+  }
+
+  String? token;
+  MoodleApiService? moodleService;
+  CalendarProvider? calendarProvider;
 
   @override
   void initState() {
     super.initState();
-    loadUsername();
+    _initializeServices();
   }
 
-  void loadUsername() async {
-    username = await getUsername();
-    setState(() {});
-  }
-
-  final TextEditingController postController = TextEditingController();
-  // Add a map to store controllers for each post
-  final Map<String, TextEditingController> _commentControllers = {};
-
-  // Helper method to get or create a controller for a post
-  TextEditingController _getCommentController(String postId) {
-    if (!_commentControllers.containsKey(postId)) {
-      _commentControllers[postId] = TextEditingController();
-    }
-    return _commentControllers[postId]!;
-  }
-
-  //dispose all controllers when the widget is disposed
-  @override
-  void dispose() {
-    _commentControllers.values.forEach((controller) => controller.dispose());
-    super.dispose();
-  }
-
-
-  Future<void> uploadPost(String type, bool showRealUsername) async {
-    try {
-      final userId = FirebaseAuth.instance.currentUser!.uid;
-
-      // Fetch user doc
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
-      print('Document exists? ${userDoc.exists}');
-      if (!userDoc.exists) {
-        Fluttertoast.showToast(msg: "User data not found!");
-        return;
-      }
-
-      final realUserName = userDoc.data()?['fullName'] ?? 'Unknown';
-      final surName = userDoc.data()?['surName'] ?? 'Unknown';
-      final username = realUserName + " " + surName;
-
-      // Decide username based on the boolean flag
-      final displayUserName = showRealUsername ? username : 'Anonymous ******';
-
-      String postText = postController.text;
-
-      await FirebaseFirestore.instance.collection('posts').add({
-        'userId': userId,
-        'userName': displayUserName,
-        'text': postText,
-        'like': 0,
-        'likedBy': [], // Added array to track users who liked the post
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-      postController.clear();
-      Fluttertoast.showToast(msg: '$type uploaded');
-    } catch (e) {
-      Fluttertoast.showToast(msg: "Failed: $e");
-    }
-  }
- Future<void>uploadComment(String comment,String postId,String userId)async{
-    //get post documents
-   try{
-     final postDoc=FirebaseFirestore.instance.collection('posts').doc(postId).get();
-     //use the post id to create a comment table
-     await  FirebaseFirestore.instance.collection('comments').add({
-       'postId':postId,
-       'comment':comment,
-       'timestamp':FieldValue.serverTimestamp(),
-       'userId': userId,
-       'userName': FirebaseAuth.instance.currentUser?.displayName ?? 'Anonymous',
-       'timestamp': FieldValue.serverTimestamp(),
-     }
-
-     );
-     Fluttertoast.showToast(msg: "comment sent");
-   }catch(e,stackTrace){
-     Fluttertoast.showToast(msg: "error : $e");
-   }
-
-
- }
-
-  Future<void> addLike(String postId, List<dynamic> currentLikedBy) async {
-    final userId = FirebaseAuth.instance.currentUser!.uid;
-    final postRef = FirebaseFirestore.instance.collection('posts').doc(postId);
-
-    if (currentLikedBy.contains(userId)) {
-      await postRef.update({
-                    'like': FieldValue.increment(-1),
-                    'likedBy': FieldValue.arrayRemove([userId]),
-                  });
-
-    } else {
-      await postRef.update({
-        'like': FieldValue.increment(1),
-        'likedBy': FieldValue.arrayUnion([userId]),
-      });
-    }
-  }
-  Future<void> logoutMoodle() async {
-    await TokenService.clearToken(); }
-  Future<void>logOutFirebase()async{
-    await FirebaseAuth.instance.signOut();
-  }
   Future<String?> getUsername() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return null;
@@ -1373,24 +1277,22 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
+  Future<void> _initializeServices() async {
+    final retrievedToken = await TokenService.getToken();
+    setState(() {
+      token = retrievedToken;
+      moodleService = MoodleApiService(
+        token: retrievedToken ?? '',
+        domain: 'https://courses.ms.wits.ac.za/moodle',
+      );
+      // Initialize calendar provider after moodleService is set
+      calendarProvider = CalendarProvider(moodleService: moodleService!);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-      // floatingActionButton: Container(
-      //   margin: EdgeInsets.only(bottom: 10, right: 10),
-      //   child: FloatingActionButton.extended(
-      //     onPressed: () {
-      //       // action
-      //     },
-      //     backgroundColor: Colors.blue,
-      //     icon: Icon(Icons.smart_toy, color: Colors.white,size: 32,),
-      //     label: Text("Ask Bot",style:TextStyle(color:Colors.black),),
-      //     elevation: 8,
-      //   ),
-      // ),
-
       drawer: Drawer(
         child: Container(
           color: Colors.grey[100],
@@ -1403,7 +1305,7 @@ class _MainPageState extends State<MainPage> {
                   Container(
                     height: 180,
                     decoration: BoxDecoration(
-                      color: Colors.indigo[900],
+                      color: Colors.orange,
                       borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(30),
                         bottomRight: Radius.circular(30),
@@ -1416,7 +1318,7 @@ class _MainPageState extends State<MainPage> {
                     child: CircleAvatar(
                       radius: 45,
                       backgroundColor: Colors.white,
-                      backgroundImage:AssetImage('images/user.png'),
+                      backgroundImage: AssetImage('images/user.png'),
                     ),
                   ),
                   Positioned(
@@ -1506,326 +1408,26 @@ class _MainPageState extends State<MainPage> {
             backgroundColor: Colors.red,
             icon:  Icon(Icons.map, color: Colors.indigo[900]),
           ),
-
         ],
       ),
       appBar: AppBar(
-        backgroundColor: Colors.grey[200],
-        title: Text(
-          "Home",
-          style: TextStyle(color: Colors.black),
+          backgroundColor: Colors.grey[200],
+          title: const Text('Moodle Calendar', style: TextStyle(color: Colors.black))
+      ),
+      body:moodleService == null
+          ? Center(child: CircularProgressIndicator())
+          : ChangeNotifierProvider.value(
+        value: calendarProvider!,
+        child: Column(
+          children: [
+
+            Expanded(
+              child: MoodleCalendarWidget(),
+            ),
+          ],
         ),
       ),
-      body: SafeArea(
-        bottom: false,
-        child: Container(
-          color: Colors.white,
-          child: Column(
-            children: [
-              // Header Section
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: postController,
-                        textAlign: TextAlign.center,
-                        decoration: InputDecoration(
-                          hintText: "Write your post/question here",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              // Post Type Selector
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[500],
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      GestureDetector(
-                        onTap: () => setState(() => isPost = true),
-                        onDoubleTap: () {
-                          setState(() {
-                            if (isPost) {
-                              if (postController.text.isEmpty || postController.text == "") {
-                                Fluttertoast.showToast(msg: "Post can not be empty");
-                                return;
-                              }
-                              uploadPost("Post", true);
-                            }
-                          });
-                        },
-                        child: Container(
-                          width: 90,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            color: isPost ? Colors.blue : Colors.grey[500],
-                          ),
-                          child: Align(
-                            alignment: Alignment.center,
-                            child: Text(
-                              "Post",
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => setState(() => isPost = false),
-                        onDoubleTap: () {
-                          setState(() {
-                            if (!isPost) {
-                              if (postController.text.isEmpty || postController.text == "") {
-                                Fluttertoast.showToast(msg: "Post can not be empty");
-                                return;
-                              }
-                              uploadPost("Anonymous Post", false);
-                            }
-                          });
-                        },
-                        child: Container(
-                          width: 130,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            color: isPost ? Colors.grey[500] : Colors.blue,
-                          ),
-                          child: Align(
-                            alignment: Alignment.center,
-                            child: Text(
-                              "Post Anonymously",
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 15),
-
-              // Main Content Area - Scrollable ListView
-              Expanded(
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('posts')
-                      .orderBy('timestamp', descending: true)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
-                    }
-                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                      return Center(child: Text("No posts yet."));
-                    }
-
-                    final docs = snapshot.data!.docs;
-                    final currentUserId = FirebaseAuth.instance.currentUser!.uid;
-
-                    return ListView.builder(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      itemCount: docs.length,
-                      itemBuilder: (context, index) {
-                        // Extract data from Firestore doc
-                        final postData = docs[index].data() as Map<String, dynamic>;
-                        final postUserId = postData['userId'];
-                        final username = (postUserId == currentUserId) ? "You" : (postData['userName'] ?? 'Unknown user');
-                        final text = postData['text'] ?? '';
-                        final postId = docs[index].id;
-                        final postLike = postData['like'] ?? 0;
-                        final likedBy = List<String>.from(postData['likedBy'] ?? []);
-                        final isLiked = likedBy.contains(currentUserId); // EDITED: Check if current user liked the post
-
-                        return  Container(
-                          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    username,
-                                    style: TextStyle(
-                                      color: Colors.indigo[800],
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    onPressed: () {
-                                      if (currentUserId == postUserId) {
-                                        //
-                                        showDialog(
-                                          context: context,
-                                          builder: (_) => AlertDialog(
-                                            title: const Text("Delete Post"),
-                                            content: const Text("Are you sure you want to delete this post?"),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () => Navigator.pop(context),
-                                                child: const Text("Cancel"),
-                                              ),
-                                              TextButton(
-                                                onPressed: () async {
-                                                  FirebaseFirestore.instance
-                                                      .collection('posts')
-                                                      .doc(docs[index].id)
-                                                      .delete();
-
-
-                                                  Navigator.pop(context);
-                                                },
-                                                child: const Text("Delete", style: TextStyle(color: Colors.red)),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                        //
-
-                                      } else {
-                                        Fluttertoast.showToast(
-                                            msg: "Allowed to delete personal posts only.");
-                                      }
-                                    },
-                                    icon: Icon(Icons.delete, color: Colors.red[700]),
-                                  ),
-                                ],
-                              ),
-
-                              const SizedBox(height: 4),
-
-                              // Post text
-                              Text(
-                                text,
-                                style: const TextStyle(fontSize: 15, height: 1.3),
-                              ),
-
-                              const SizedBox(height: 8),
-
-                              // Like button row
-                              Row(
-                                children: [
-                                  IconButton(
-                                    onPressed: () {
-                                      addLike(postId, likedBy);
-                                    },
-                                    icon: Badge(
-                                      label: Text(
-                                        postLike.toString(),
-                                        style: const TextStyle(color: Colors.white, fontSize: 12),
-                                      ),
-                                      child: Icon(
-                                        isLiked ? Icons.favorite : Icons.favorite_border,
-                                        color: isLiked ? Colors.red : Colors.grey,
-                                      ),
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                ],
-                              ),
-
-                              const Divider(height: 16),
-
-                              // Reply / Comment Input
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: TextField(
-                                      controller:  _getCommentController(postId),
-                                      decoration: InputDecoration(
-                                        hintText: "Add a reply...",
-                                        isDense: true,
-                                        contentPadding:
-                                        const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(15),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                 IconButton(
-                                    onPressed: () {
-                                      String commentText = _getCommentController(postId).text;
-                                      uploadComment(commentText, postId,currentUserId);
-
-                                      _getCommentController(postId).clear();
-                                    },
-                                    icon: const Icon(Icons.send, size: 22),
-                                    style: ElevatedButton.styleFrom(
-
-
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              const SizedBox(height: 6),
-
-                              // View Comments link
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => PostCommentsPage(postId:postId,userId:currentUserId),
-                                    ),
-                                  );
-                                },
-                                child: Text(
-                                  "View comments",
-                                  style: TextStyle(
-                                    decoration: TextDecoration.underline,
-                                    color: Colors.blue[800],
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+      );
   }
 }
 class TasksPage extends StatefulWidget {
@@ -1847,288 +1449,7 @@ class _TasksPageState extends State<TasksPage> {
   }
 }
 
-class PostCommentsPage extends StatefulWidget {
-  final String postId;
-  final String userId;
 
-  const PostCommentsPage({
-    Key? key,
-    required this.postId,
-    required this.userId,
-  }) : super(key: key);
-
-  @override
-  State<PostCommentsPage> createState() => _PostCommentsPageState();
-}
-
-class _PostCommentsPageState extends State<PostCommentsPage> {
-  late Future<DocumentSnapshot<Map<String, dynamic>>> postFuture;
-  late final Stream<QuerySnapshot<Map<String, dynamic>>> commentsStream;
-  final ScrollController _scrollController = ScrollController();
-  final TextEditingController _commentController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
-
-  void _loadData() {
-    postFuture = FirebaseFirestore.instance
-        .collection('posts')
-        .doc(widget.postId)
-        .get();
-
-    commentsStream = FirebaseFirestore.instance
-        .collection('comments')
-        .where('postId', isEqualTo: widget.postId)
-    .orderBy('timestamp',descending:false)
-        .snapshots();
-  }
-
-  Future<void> addLike() async {
-    try {
-      final userId = FirebaseAuth.instance.currentUser!.uid;
-      final postRef = FirebaseFirestore.instance.collection('posts').doc(widget.postId);
-
-      // Get fresh data to ensure we have current state
-      final postDoc = await postRef.get();
-      final currentLikedBy = List<String>.from(postDoc['likedBy'] ?? []);
-
-      if (currentLikedBy.contains(userId)) {
-        await postRef.update({
-          'like': FieldValue.increment(-1),
-          'likedBy': FieldValue.arrayRemove([userId]),
-        });
-      } else {
-        await postRef.update({
-          'like': FieldValue.increment(1),
-          'likedBy': FieldValue.arrayUnion([userId]),
-        });
-      }
-
-      // Refresh the post data
-      setState(() {
-        postFuture = postRef.get();
-      });
-    } catch (e) {
-      Fluttertoast.showToast(msg: "Error liking post: $e");
-    }
-  }
-
-  Future<void> addComment(String comment) async {
-    try {
-      if (comment.trim().isEmpty) return;
-      final userId= widget.userId;
-      final userDoc= await FirebaseFirestore.instance.collection('users').doc(userId).get();
-      final displayName=userDoc.data()?['fullName']+" "+userDoc.data()?['surName'];
-
-      await FirebaseFirestore.instance.collection('comments').add({
-        'postId': widget.postId, // Consistent field name
-        'comment': comment,
-        'userId': widget.userId,
-        'userName': displayName,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-      _commentController.clear();
-    } catch (e) {
-      Fluttertoast.showToast(msg: "Error adding comment: $e");
-    }
-  }
-
-  void deletePost() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Delete Post"),
-        content: const Text("Are you sure you want to delete this post?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () async {
-              try {
-                // Delete post and its comments
-                final batch = FirebaseFirestore.instance.batch();
-
-                // Delete post
-                batch.delete(FirebaseFirestore.instance.collection('posts').doc(widget.postId));
-
-                // Delete all comments for this post
-                final comments = await FirebaseFirestore.instance
-                    .collection('comments')
-                    .where('postId', isEqualTo: widget.postId)
-                    .get();
-
-                for (var doc in comments.docs) {
-                  batch.delete(doc.reference);
-                }
-
-                await batch.commit();
-
-                if (mounted) {
-                  Navigator.pop(context);
-                  Navigator.pop(context);
-                }
-              } catch (e) {
-                if (mounted) Navigator.pop(context);
-                Fluttertoast.showToast(msg: "Error deleting post: $e");
-              }
-            },
-            child: const Text("Delete", style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Post & Comments')),
-      body: Column(
-        children: [
-          // Post with like/comment/delete
-          FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-            future: postFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Padding(
-                  padding: EdgeInsets.all(20.0),
-                  child: CircularProgressIndicator(),
-                );
-              }
-              if (!snapshot.hasData || !snapshot.data!.exists) {
-                return const Padding(
-                  padding: EdgeInsets.all(20.0),
-                  child: Text('Post not found'),
-                );
-              }
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _scrollController.jumpTo(
-                  _scrollController.position.maxScrollExtent,
-                );
-              });
-              final postData = snapshot.data!.data()!;
-              final likedBy = List<String>.from(postData['likedBy'] ?? []);
-              final isLiked = likedBy.contains(widget.userId);
-              final likeCount = postData['like'] ?? 0;
-
-              return Card(
-                margin: const EdgeInsets.all(8),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        postData['userName'] ?? 'Unknown User',
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(postData['text'] ?? ''),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: Icon(
-                              isLiked
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              color: isLiked ? Colors.red : Colors.grey,
-                            ),
-                            onPressed: addLike, // Simplified call
-                          ),
-                          Text("$likeCount"),
-                          const SizedBox(width: 16),
-                          if (postData['userId'] == widget.userId) ...[
-                            const SizedBox(width: 16),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: deletePost,
-                            ),
-                          ],
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-
-          const Divider(),
-
-          // Comments
-          Expanded(
-            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: commentsStream,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text('No comments yet.'));
-                }
-
-                final comments = snapshot.data!.docs;
-                return ListView.builder(
-                  controller: _scrollController,
-                  itemCount: comments.length,
-                  itemBuilder: (context, index) {
-                    final commentData = comments[index].data();
-                    return ListTile(
-                      leading: const CircleAvatar(child: Icon(Icons.person)),
-                      title: Text(commentData['userName'] ?? 'Anonymous'),
-                      subtitle: Text(commentData['comment']),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-
-          // Comment Input
-          SafeArea(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(top: BorderSide(color: Colors.grey[300]!)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _commentController,
-                      decoration: const InputDecoration(
-                        hintText: "Add a comment...",
-                        border: InputBorder.none,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.send),
-                    onPressed: () {
-                      final comment = _commentController.text.trim();
-                      if (comment.isNotEmpty) {
-                        addComment(comment);
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-}
 class Planner extends StatefulWidget {
   const Planner({super.key});
 
@@ -2569,12 +1890,9 @@ class Notifications_screen extends StatelessWidget {
     );
   }
 }
-
-
-
 class AboutUsPage extends StatelessWidget {
   final String appName;
-  const AboutUsPage({super.key, this.appName = "MentorLink"});
+  const AboutUsPage({super.key, this.appName = "MoodleTrack"});
 
   @override
   Widget build(BuildContext context) {
@@ -2583,7 +1901,7 @@ class AboutUsPage extends StatelessWidget {
       appBar: AppBar(
         title: Text("About $appName"),
         backgroundColor: Colors.grey[200],
-        foregroundColor: Colors.indigo[900],
+        foregroundColor: Colors.black, // changed to black for other texts
         elevation: 0,
       ),
       body: SafeArea(
@@ -2597,18 +1915,18 @@ class AboutUsPage extends StatelessWidget {
                   appName,
                   style: theme.textTheme.displaySmall?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: Colors.indigo[900],
+                    color: Colors.orange, // only app name is orange
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "Your all-in-one student companion at Wits. We built this platform to make student life simpler, more connected, and less stressful.",
+                  "Your all-in-one student companion at Wits. MoodleTrack helps you stay on top of your courses, tasks, and deadlines effortlessly.",
                   style: theme.textTheme.bodyLarge,
                 ),
                 const SizedBox(height: 24),
                 Card(
                   elevation: 2,
-                  shadowColor: Colors.indigo[100],
+                  shadowColor: Colors.grey[200],
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -2618,36 +1936,30 @@ class AboutUsPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "What we offer",
+                          "What MoodleTrack Offers",
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: Colors.indigo[900],
+                            color: Colors.black,
                           ),
                         ),
                         const SizedBox(height: 16),
                         _FeatureRow(
+                          icon: Icons.event_note_outlined,
+                          title: "Tasks & Deadlines",
+                          subtitle: "View all your course tasks and upcoming due dates in one place.",
+                          color: Colors.black,
+                        ),
+                        _FeatureRow(
+                          icon: Icons.calendar_today_outlined,
+                          title: "Calendar View",
+                          subtitle: "See your upcoming events and deadlines at a glance.",
+                          color: Colors.black,
+                        ),
+                        _FeatureRow(
                           icon: Icons.notifications_active_outlined,
-                          title: "Real-time Updates",
-                          subtitle: "Instant announcements and upcoming events as they happen.",
-                          color: Colors.indigo[900]!,
-                        ),
-                        _FeatureRow(
-                          icon: Icons.forum_outlined,
-                          title: "Anonymous Posting",
-                          subtitle: "Share questions and concerns privately and get helpful responses.",
-                          color: Colors.indigo[900]!,
-                        ),
-                        _FeatureRow(
-                          icon: Icons.event_available_outlined,
-                          title: "Moodle Due Dates",
-                          subtitle: "All your course deadlines organized in one clear view.",
-                          color: Colors.indigo[900]!,
-                        ),
-                        _FeatureRow(
-                          icon: Icons.volunteer_activism_outlined,
-                          title: "Mentorship Support",
-                          subtitle: "A safe space for mentees to connect, learn, and grow.",
-                          color: Colors.indigo[900]!,
+                          title: "Reminders & Notifications",
+                          subtitle: "Set reminders for events and get notified so you never miss anything.",
+                          color: Colors.black,
                         ),
                       ],
                     ),
@@ -2655,15 +1967,15 @@ class AboutUsPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  "Why we exist",
+                  "Why MoodleTrack Exists",
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: Colors.indigo[900],
+                    color: Colors.black,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "$appName brings your campus life together so you can focus on what matters most: your success.",
+                  "$appName brings your Moodle courses and student life together so you can focus on learning and staying organized.",
                   style: theme.textTheme.bodyLarge,
                 ),
                 const SizedBox(height: 24),
@@ -2671,11 +1983,10 @@ class AboutUsPage extends StatelessWidget {
                   spacing: 10,
                   runSpacing: 10,
                   children: const [
-                    _Tag(label: "Events"),
-                    _Tag(label: "Announcements"),
-                    _Tag(label: "Anonymous Q&A"),
-                    _Tag(label: "Moodle Deadlines"),
-                    _Tag(label: "Mentorship"),
+                    _Tag(label: "Tasks"),
+                    _Tag(label: "Calendar"),
+                    _Tag(label: "Reminders"),
+                    _Tag(label: "Notifications"),
                   ],
                 ),
                 const SizedBox(height: 32),
@@ -2685,7 +1996,7 @@ class AboutUsPage extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 22,
-                      backgroundColor: Colors.indigo[900],
+                      backgroundColor: Colors.black,
                       child: Text(
                         "MC",
                         style: theme.textTheme.titleMedium?.copyWith(
@@ -2699,7 +2010,7 @@ class AboutUsPage extends StatelessWidget {
                       child: Text(
                         "Developed by Mahlatse Clayton Maredi",
                         style: theme.textTheme.titleMedium?.copyWith(
-                          color: Colors.indigo[900],
+                          color: Colors.black,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -2796,24 +2107,6 @@ class _DrawerTile extends StatelessWidget {
     );
   }
 }
-class Questionaires extends StatefulWidget {
-  const Questionaires({super.key});
-
-  @override
-  State<Questionaires> createState() => _QuestionairesState();
-}
-
-class _QuestionairesState extends State<Questionaires> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Q&A page"),
-      ),
-    );
-  }
-}
-
 
 
 
