@@ -1387,7 +1387,7 @@ class _addEventState extends State<addEvent> {
                                 id: eventStartDateTime.millisecondsSinceEpoch ~/ 1000, // unique ID
                                 title: "Upcoming Event: $event_name",
                                 body: "Your event '$event_name' starts in 10 minutes!",
-                                scheduledTime: tzNotificationTime,
+                                scheduledTime: tzNotificationTime, // Pass TZDateTime directly
                               );
 
                               Fluttertoast.showToast(

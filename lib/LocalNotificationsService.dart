@@ -51,19 +51,13 @@ class LocalNotificationsService {
 
     await _notificationsPlugin.show(0, title, body, details, payload: payload);
   }
-
-  // Schedule a notification
+// Schedule a notification
   static Future<void> scheduleEventNotification({
     required int id,
     required String title,
     required String body,
-    required DateTime scheduledTime,
+    required tz.TZDateTime scheduledTime, // Change from DateTime to tz.TZDateTime
   }) async {
-    final tzScheduled = tz.TZDateTime.from(
-      scheduledTime.subtract(Duration(minutes: 10)), // 10 mins before
-      tz.local,
-    );
-
     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       'event_channel',
       'Event Notifications',
@@ -79,7 +73,7 @@ class LocalNotificationsService {
       id,
       title,
       body,
-      tzScheduled,
+      scheduledTime, // Use the TZDateTime directly
       details,
       androidAllowWhileIdle: true,
       uiLocalNotificationDateInterpretation:
