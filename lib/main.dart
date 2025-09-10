@@ -16,9 +16,9 @@ import 'calendar_provider.dart';
 import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
-
+import 'package:uuid/uuid.dart';
 
 import 'moodle_api_service.dart';
 import 'moodle_calendar_widget.dart';
@@ -89,8 +89,6 @@ class _AuthCheckState extends State<AuthCheck> {
   }
 }
 
-
-
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
 
@@ -102,173 +100,172 @@ class _HomepageState extends State<Homepage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(child: Stack(
-        children: [
-          Container(
-            height:double.infinity,
-            width:double.infinity,
-
-            decoration: BoxDecoration(
-              image:DecorationImage(image: AssetImage("images/background1.jpg"),
-                  fit: BoxFit.cover),
-            ),
-            child:       Container(
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // Background with gradient overlay
+            Container(
+              height: double.infinity,
               width: double.infinity,
-              height: 300,
-              decoration:BoxDecoration(
-                color: (Colors.grey[900] ?? Colors.grey[900])!.withOpacity(.65),
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage("images/background1.png"),
+                  fit: BoxFit.cover,
+                ),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.7),
+                      Colors.black.withOpacity(0.5),
+                      Colors.black.withOpacity(0.3),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
-          SingleChildScrollView(
-              child:Column(
 
+            // Main Content
+            SingleChildScrollView(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Padding(padding:EdgeInsets.only(top:190,left: 10),
-                    child:  Column(
-
+                  // App Title & Slogan
+                  Padding(
+                    padding: const EdgeInsets.only(top: 190, left: 10),
+                    child: Column(
                       children: [
-
-                        Text("Welcome ",style:TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 50,
-
-                          fontWeight: FontWeight.bold,
-                        )
+                        Text(
+                          "Welcome to",
+                          style: TextStyle(
+                            color: Colors.grey[300],
+                            fontSize: 42,
+                            fontWeight: FontWeight.w300,
+                            letterSpacing: 1.5,
+                          ),
                         ),
-                        Text("to ",style:TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 50,
-                          fontWeight: FontWeight.bold,
-                        )
+                        const SizedBox(height: 5),
+                        Text(
+                          "MoodleTrack",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 58,
+                            fontWeight: FontWeight.bold,
+                            shadows: [
+                              Shadow(
+                                blurRadius: 10.0,
+                                color: Colors.black.withOpacity(0.5),
+                                offset: const Offset(2.0, 2.0),
+                              ),
+                            ],
+                          ),
                         ),
-                        Text("Mentee",style:TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 50,
-                          fontWeight: FontWeight.bold,
-                        )
-                        ),
-                        Text("Growth Tracker",style:TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 50,
-                          fontWeight: FontWeight.bold,
-                        )
-                        ),
-                        Text("Mentor. Connect. Elevate.",style:TextStyle(
-                          color: Colors.grey[200],
-                          fontSize: 23,
-                          fontWeight: FontWeight.bold,
-                        )
+                        const SizedBox(height: 15),
+                        Text(
+                          "Stay on Time. Stay on Track.",
+                          style: TextStyle(
+                            color: Colors.grey[300],
+                            fontSize: 20,
+                            fontWeight: FontWeight.w500,
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
                       ],
                     ),
                   ),
 
-
-
-
+                  // Sign In Button
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        margin:const EdgeInsets.all(40),
-                        padding:const EdgeInsets.all(25),
-
-
-
+                        margin: const EdgeInsets.all(40),
+                        padding: const EdgeInsets.all(25),
                         child: ElevatedButton.icon(
-                          onPressed: (){
-                            // button click
-                            Navigator.push(context, MaterialPageRoute(builder: (_)=>LoginPage()),);
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => LoginPage()),
+                            );
                           },
-                          icon:const Icon(Icons.login),
-                          label:const Text("Sign In"
-                            ,style: TextStyle(
-                              fontSize: 18,
-                            ),),
-                          style:ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.only(left:32,right: 32,top: 18,bottom: 18),
+                          icon: const Icon(Icons.login, size: 28),
+                          label: const Text(
+                            "Sign In",
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.orange[700],
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 40, vertical: 18),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            shadowColor: Colors.black.withOpacity(0.4),
+                            elevation: 8,
                           ),
                         ),
                       ),
                     ],
+                  ),
 
-                  ),
+                  // Divider
                   Container(
-                    height:2,
+                    height: 1,
                     width: double.infinity,
-                    color: Colors.grey[300],
-                  ),
-                  TextButton.icon(
-                    onPressed: (){
-                      Navigator.push(context, MaterialPageRoute(builder: (_)=>SignUpScreen()),);
-                    },
-                    label: Text("Don't have an account? Sign Up",style:TextStyle(
-                      color: Colors.white,
-                    ),
-                    ),
+                    color: Colors.grey[400]!.withOpacity(0.5),
                   ),
                 ],
-              )
-          ),
-        ],
+              ),
+            ),
+          ],
+        ),
       ),
-      ),
-
     );
-
   }
 }
 
-
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  const LoginPage({Key? key}) : super(key: key);
 
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
+
 class _LoginPageState extends State<LoginPage> {
-  bool isLogin = true;
   bool isLoading = false;
+  bool _obscurePassword = true;
   final _formKey = GlobalKey<FormState>();
-  bool isCustomer = true; //student
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passController = TextEditingController();
-  Future<void> saveFcmTokenOnLogin() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
 
-    final _messaging = FirebaseMessaging.instance;
-    String? token = await _messaging.getToken();
-    if (token == null) return;
+  // Firebase Authentication instance
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-    final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
-    final doc = await userDocRef.get();
-
-    if (!doc.exists) {
-      // User document does not exist, create it with token
-      await userDocRef.set({'fcmToken': token}, SetOptions(merge: true));
-      print("FCM token saved for new user: $token");
-    } else {
-      final existingToken = doc.data()?['fcmToken'];
-      if (existingToken != token) {
-        // Token is missing or different, update it
-        await userDocRef.set({'fcmToken': token}, SetOptions(merge: true));
-        print("FCM token updated: $token");
-      } else {
-        print("FCM token already exists and is the same.");
-      }
+  /// ✅ Get FCM token
+  Future<String?> _getFcmToken() async {
+    try {
+      final _messaging = FirebaseMessaging.instance;
+      String? token = await _messaging.getToken();
+      return token;
+    } catch (e) {
+      print('FCM token error: $e');
+      return null;
     }
   }
 
+  /// ✅ Moodle token request
   Future<String?> _getMoodleToken(String username, String password) async {
     try {
       final response = await http.get(
         Uri.parse(
-            'https://courses.ms.wits.ac.za/moodle/login/token.php?'
-                'username=$username&password=$password&service=moodle_mobile_app'
-        ),
+            'https://courses.ms.wits.ac.za/moodle/login/token.php?username=$username&password=$password&service=moodle_mobile_app'),
       );
 
       if (response.statusCode == 200) {
@@ -283,66 +280,125 @@ class _LoginPageState extends State<LoginPage> {
       return null;
     }
   }
+
+  /// ✅ Create Firebase user with email and password
+  Future<UserCredential?> _createFirebaseUser(String email, String password) async {
+    try {
+      // First try to sign in
+      try {
+        return await _auth.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'user-not-found') {
+          // If user doesn't exist, create a new one
+          return await _auth.createUserWithEmailAndPassword(
+            email: email,
+            password: password,
+          );
+        } else {
+          rethrow;
+        }
+      }
+    } catch (e) {
+      print('Firebase auth error: $e');
+      return null;
+    }
+  }
+
+  /// ✅ Register or update user in Firestore using Moodle student number
+  Future<void> _registerUser(String userId, String email, String fcmToken) async {
+    try {
+      final userDoc = FirebaseFirestore.instance.collection('users').doc(userId);
+      final snapshot = await userDoc.get();
+
+      if (snapshot.exists) {
+        // Update existing user's FCM token
+        await userDoc.update({
+          'fcmToken': fcmToken,
+          'email': email,
+          'lastLogin': FieldValue.serverTimestamp(),
+        });
+        print('🔄 Updated existing user: $userId');
+      } else {
+        // Create new user
+        await userDoc.set({
+          'userId': userId,
+          'email': email,
+          'fcmToken': fcmToken,
+          'createdAt': FieldValue.serverTimestamp(),
+          'lastLogin': FieldValue.serverTimestamp(),
+        });
+        print('✅ Created new user: $userId');
+      }
+    } catch (e) {
+      print('❌ Firestore user error: $e');
+      Fluttertoast.showToast(msg: "User registration failed");
+    }
+  }
+
+  /// ✅ Store student number for later use
+  Future<void> _storeStudentNumber(String studentNumber) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('student_number', studentNumber);
+  }
+
+  /// ✅ Main login function
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => isLoading = true);
 
     try {
-
-      final email = emailController.text.trim(); // removed .toLowerCase()
-      final Username=email.substring(0,7);
+      final email = emailController.text.trim();
+      final username = email.substring(0, 7); // Moodle student number
       final password = passController.text.trim();
-      final token = await _getMoodleToken(Username, password);
+
+      print('🔐 Attempting Moodle login for: $username');
+
+      // 1. Get Moodle token
+      final token = await _getMoodleToken(username, password);
 
       if (token != null) {
-        // STORE THE TOKEN - This is the key step!
+        print('✅ Moodle authentication successful');
+
+        // 2. Store Moodle token locally
         await TokenService.storeToken(token);
 
+        // 3. Create or sign in Firebase user
+        final userCredential = await _createFirebaseUser(email, password);
 
-        // Sign in with email and password
-        UserCredential userCredential = await FirebaseAuth.instance
-            .signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
-
-        // Check if email is verified
-        if (!userCredential.user!.emailVerified) {
-          await FirebaseAuth.instance.signOut();
-          throw FirebaseAuthException(
-            code: 'email-not-verified',
-            message: 'Please verify your email first',
-          );
+        if (userCredential == null) {
+          throw Exception('Could not create Firebase user');
         }
 
-        // Login successful - navigate to home
+        // 4. Get FCM token
+        final fcmToken = await _getFcmToken();
+        if (fcmToken == null) {
+          throw Exception('Could not get notification token');
+        }
+
+        // 5. Register or update user in Firestore
+        await _registerUser(username, email, fcmToken);
+
+        // 6. Store student number for later use
+        await _storeStudentNumber(username);
+
+        // 7. Navigate to MainPage
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) =>
-              MainPage(
-
-              )),
+          MaterialPageRoute(builder: (context) => MainPage()),
         );
+
+        Fluttertoast.showToast(msg: "Login successful!");
+      } else {
+        print('❌ Moodle authentication failed');
+        Fluttertoast.showToast(msg: "Invalid student credentials");
       }
-    } on FirebaseAuthException catch (e) {
-      String message;
-      switch (e.code) {
-        case 'user-not-found':
-          message = 'No user found with this email';
-          break;
-        case 'wrong-password':
-          message = 'Incorrect password';
-          break;
-        case 'email-not-verified':
-          message = 'Please verify your email first';
-          break;
-        default:
-          message = 'Login failed: ${e.message}';
-      }
-      Fluttertoast.showToast(msg: message);
     } catch (e) {
-      Fluttertoast.showToast(msg: ' ${e.toString()}');
+      print('Login error: $e');
+      Fluttertoast.showToast(msg: "Login failed: ${e.toString()}");
     } finally {
       if (mounted) {
         setState(() => isLoading = false);
@@ -354,16 +410,24 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          backgroundColor: Colors.grey[500],
-          title:Text("Login Page",style:TextStyle(
-            color:Colors.white,
+        backgroundColor: Colors.orange[500],
+        elevation: 0,
+        title: Text(
+          "Login to MoodleTrack",
+          style: TextStyle(
+            color: Colors.white,
             fontWeight: FontWeight.bold,
-          ))
+            fontSize: 20,
+          ),
+        ),
+        centerTitle: true,
+        iconTheme: IconThemeData(color: Colors.white),
       ),
-      backgroundColor: Colors.grey[600],
+      backgroundColor: Colors.grey[100],
       body: SafeArea(
         child: Stack(
           children: [
+            // Background image with gradient overlay
             Container(
               width: double.infinity,
               height: double.infinity,
@@ -373,205 +437,191 @@ class _LoginPageState extends State<LoginPage> {
                   fit: BoxFit.cover,
                 ),
               ),
-              child:Container(
+              child: Container(
                 width: double.infinity,
                 height: double.infinity,
-                color: (Colors.grey[900] ?? Colors.grey[900])!.withOpacity(.65),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.orange[700]!.withOpacity(0.8),
+                      Colors.orange[600]!.withOpacity(0.6),
+                      Colors.orange[400]!.withOpacity(0.4),
+                    ],
+                  ),
+                ),
               ),
             ),
 
+            // Login Form
             Center(
               child: SingleChildScrollView(
                 child: Container(
                   margin: const EdgeInsets.all(25),
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(28),
                   decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(16),
+                    color: Colors.white.withOpacity(0.92),
+                    borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
-                        blurRadius: 10,
-                        spreadRadius: 3,
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 15,
+                        spreadRadius: 2,
+                        offset: Offset(0, 5),
                       ),
                     ],
                   ),
                   child: Form(
                     key: _formKey,
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Login/Sign up toggle
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  isLogin = true;
-                                });
-                              },
-                              child: Column(
-                                children: [
-                                  Text(
-                                    "Login",
-                                    style: TextStyle(
-                                      fontSize: 19.0,
-                                      fontWeight: FontWeight.bold,
-                                      color: isLogin ? Colors.indigo[900] : Colors.cyan[200],
-                                    ),
-                                  ),
-                                  Container(
-                                    height: 3,
-                                    width: 55,
-                                    margin: const EdgeInsets.only(top: 5),
-                                    color: Colors.orange[300],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                setState(() async {
-                                  final bool result = await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => const SignUpScreen()),
-                                  );
-                                  if (result == false) {
-                                    isLogin = true;
-                                  } else {
-                                    isLogin = false;
-                                  }
-                                });
-                              },
-                              child: Column(
-                                children: [
-                                  Text(
-                                    "Sign Up",
-                                    style: TextStyle(
-                                      fontSize: 19.0,
-                                      fontWeight: FontWeight.bold,
-                                      color: isLogin ? Colors.cyan[200] : Colors.indigo[900],
-                                    ),
-                                  ),
-                                  Container(
-                                    height: 3,
-                                    width: 55,
-                                    margin: const EdgeInsets.only(top: 5),
-                                    color: Colors.orange[300],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                        // Header
+                        Icon(
+                          Icons.school,
+                          size: 50,
+                          color: Colors.orange[800],
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 15),
+                        Text(
+                          "Moodle Login",
+                          style: TextStyle(
+                            fontSize: 26.0,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange[700],
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          "Enter your Wits student credentials",
+                          style: TextStyle(
+                            fontSize: 14.0,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        const SizedBox(height: 25),
 
-                        // Email TextFormField
+                        // Email Field
                         TextFormField(
                           controller: emailController,
                           decoration: InputDecoration(
-                            prefixIcon: Icon(Icons.email, color: Colors.indigo[900]),
-                            hintText: "Enter your email",
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+                            prefixIcon: Icon(Icons.email, color: Colors.orange[700]),
+                            hintText: "e.g., 1234567@students.wits.ac.za",
+                            labelText: "Student Email",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[400]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.orange[700]!, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter your email';
+                              return 'Please enter your student email';
                             }
-                            if (!value.contains('@')) {
-                              return 'Please enter a valid email';
+                            if (!value.endsWith('@students.wits.ac.za')) {
+                              return 'Must be a valid Wits student email';
+                            }
+                            if (value.length < 16) {
+                              return 'Invalid student email format';
                             }
                             return null;
                           },
                         ),
+                        const SizedBox(height: 20),
 
-                        const SizedBox(height: 10),
-                        // Password TextFormField
+                        // Password Field
                         TextFormField(
                           controller: passController,
-                          obscureText: true,
+                          obscureText: _obscurePassword,
                           decoration: InputDecoration(
-                            prefixIcon: Icon(Icons.lock, color: Colors.indigo[900]),
-                            hintText: "Enter your password",
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+                            prefixIcon: Icon(Icons.lock, color: Colors.orange[700]),
+                            hintText: "Enter your Moodle password",
+                            labelText: "Password",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[400]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.orange[700]!, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                                color: Colors.grey[600],
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Please enter your password';
                             }
-                            if (value.length < 8) {
-                              return 'Password must be at least 8 characters';
+                            if (value.length < 6) {
+                              return 'Password must be at least 6 characters';
                             }
                             return null;
                           },
                         ),
-                        const SizedBox(height: 7),
-                        // Forgot password
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => ForgotPasswordPage()),
-                              );
-                            },
-                            child: Text(
-                              "Forgot password?",
+                        const SizedBox(height: 25),
+
+                        // Login Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: isLoading ? null : _login,
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.orange[700],
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 5,
+                              shadowColor: Colors.orange[300],
+                            ),
+                            child: isLoading
+                                ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                                : Text(
+                              "Sign In",
                               style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: Colors.indigo[900],
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
                         ),
+
                         const SizedBox(height: 15),
-                        // Sign In button
-                        ElevatedButton.icon(
-                          onPressed: isLoading
-                              ? null
-                              : () async {
-                            setState(() {
-                              isLoading = true;
-                            });
 
-                            try {
-                              // Wait for login to complete
-                              await _login();
-
-                              // Save FCM token after login
-                              await saveFcmTokenOnLogin();
-                            } catch (e) {
-                              print("Login or FCM error: $e");
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text("Login failed: $e")),
-                              );
-                            } finally {
-                              setState(() {
-                                isLoading = false;
-                              });
-                            }
-                          },
-                          icon: isLoading
-                              ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.5,
-                            ),
-                          )
-                              : Icon(Icons.login),
-                          label: Text(isLoading ? "Signing in..." : "Sign In"),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.indigo[900],
-                            foregroundColor: Colors.grey[300],
-                            textStyle: const TextStyle(fontSize: 18),
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        // Help text
+                        Text(
+                          "Use your Wits student portal credentials",
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 13,
+                            fontStyle: FontStyle.italic,
                           ),
-                        )
-
+                        ),
                       ],
                     ),
                   ),
@@ -585,851 +635,43 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
+class _DrawerTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
 
-  @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
-}
-
-class _SignUpScreenState extends State<SignUpScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _auth = FirebaseAuth.instance;
-  bool isLoading = false;
-  bool isSignUp = true;
-  final TextEditingController nameController=TextEditingController();
-  final TextEditingController surNameController=TextEditingController();
-  final TextEditingController passController=TextEditingController();
-  final TextEditingController cpassController=TextEditingController();
-  final TextEditingController emailController=TextEditingController();
-  // final email
-  @override
-  void showToast(String message) {
-    Fluttertoast.showToast(
-      msg: message,
-      gravity: ToastGravity.BOTTOM,
-      backgroundColor: Colors.red,
-      textColor: Colors.white,
-      fontSize: 16,
-    );
-  }
-
-  bool verifyForm(){
-    if(nameController.text.isEmpty||passController.text.isEmpty ||cpassController.text.isEmpty|| surNameController.text.isEmpty||emailController.text.isEmpty){
-      return false;
-    }
-    return true;
-  }
-
-  bool validInput(){
-    // check email validity..
-    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-    if (!emailRegex.hasMatch(emailController.text.trim())) {
-
-      return false;
-    }
-    return true;
-
-  }
-  String? validatePass(String password) {
-    if (password.length < 8) {
-      return "Password must be at least 8 characters long.";
-    }
-
-    if (!RegExp(r'[A-Z]').hasMatch(password)) {
-      return "Add at least one uppercase letter.";
-    }
-
-    if (!RegExp(r'[a-z]').hasMatch(password)) {
-      return "Add at least one lowercase letter.";
-    }
-
-    if (!RegExp(r'[0-9]').hasMatch(password)) {
-      return "Add at least one digit.";
-    }
-
-    if (!RegExp(r'[!@#\$&*~]').hasMatch(password)) {
-      return "Add at least one special character (!@#\$&*~).";
-    }
-
-    return null;
-  }
-bool spaceCheck(String x){
-    if(x.contains(" ")){
-      return false;
-    }
-    return true;
-}
-
-  Future<void> registerUser({
-    required String uid,
-    required String email,
-    required String fullName,
-    required String surName,
-  }) async {
-
-
-    await FirebaseFirestore.instance.collection('users').doc(uid).set({
-      'uid': uid,
-      'email': email,
-      'fullName': fullName,
-      'surName': surName,
-      'isVerified': false,
-      'createdAt': Timestamp.now(),
-    });
-  }
-
-
-
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.grey[500],
-        title:Text("Sign Up Page",style:TextStyle(
-          color:Colors.white,
-          fontWeight: FontWeight.bold,
-        ))
-      ),
-      backgroundColor: Colors.grey[600],
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // Background image covers entire screen
-            Container(
-              height: double.infinity,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage("images/background1.jpg"),
-                  fit: BoxFit.cover,
-                ),
-              ),
-              child:Container(
-                width: double.infinity,
-                height: double.infinity,
-                color: (Colors.grey[900] ?? Colors.grey[900])!.withOpacity(.65),
-              ),
-            ),
-
-
-            // Top title text, centered horizontally, positioned near top with padding
-            Positioned(
-              top: 60,
-              left: 0,
-              right: 0,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "Create",
-                    style: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 38,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    "New",
-                    style: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 38,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    "Account",
-                    style: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 38,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-
-            Positioned.fill(
-              top: 220,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 25),
-                child: Center(
-                  child: Container(
-                    constraints: const BoxConstraints(
-                      maxWidth: 500,
-                    ),
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 10,
-                          spreadRadius: 3,
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Login/Sign up toggle
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                isSignUp = false;
-                               Navigator.push(context, MaterialPageRoute(builder: (_)=>LoginPage()));
-                              },
-                              child: Column(
-                                children: [
-                                  Text(
-                                    "Login",
-                                    style: TextStyle(
-                                      fontSize: 19.0,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.cyan[200],
-                                    ),
-                                  ),
-                                  Container(
-                                    height: 3,
-                                    width: 55,
-                                    margin: const EdgeInsets.only(top: 5),
-                                    color: Colors.orange[300],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  isSignUp = true;
-                                });
-                              },
-                              child: Column(
-                                children: [
-                                  Text(
-                                    "Sign Up",
-                                    style: TextStyle(
-                                      fontSize: 19.0,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.indigo[900],
-                                    ),
-                                  ),
-                                  Container(
-                                    height: 3,
-                                    width: 55,
-                                    margin: const EdgeInsets.only(top: 5),
-                                    color: Colors.orange[300],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Name field
-                        TextField(
-                          controller: nameController,
-                          decoration: InputDecoration(
-                            prefixIcon: Icon(Icons.person, color: Colors.indigo[900]),
-                            hintText: "Enter your name",
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 15),
-
-                        // Surname field
-                        TextField(
-                          controller: surNameController,
-                          decoration: InputDecoration(
-                            prefixIcon: Icon(Icons.person, color: Colors.indigo[900]),
-                            hintText: "Enter your surname",
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 15),
-
-                        // Email field
-                        TextField(
-                          controller: emailController,
-                          decoration: InputDecoration(
-                            prefixIcon: Icon(Icons.email, color: Colors.indigo[900]),
-                            hintText: "Enter your email",
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                          ),
-                          keyboardType: TextInputType.emailAddress,
-                        ),
-
-                        const SizedBox(height: 15),
-
-                        // Password field
-                        TextField(
-                          controller: passController,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            prefixIcon: Icon(Icons.lock, color: Colors.indigo[900]),
-                            hintText: "Enter new password",
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 15),
-
-                        // Confirm password field
-                        TextField(
-                          controller: cpassController,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            prefixIcon: Icon(Icons.lock, color: Colors.indigo[900]),
-                            hintText: "Confirm password",
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Register & Verify button
-                    // Register & Verify button
-                    ElevatedButton.icon(
-                      onPressed: isLoading
-                          ? null
-                          : () async {
-                        setState(() => isLoading = true);
-
-                        try {
-                          // 1. Form validations
-                          if (!verifyForm()) {
-                            Fluttertoast.showToast(msg: "All fields are required");
-                            setState(() => isLoading = false);
-                            return;
-                          }
-
-                          // 2. Password validation
-                          final String? passValidation = validatePass(passController.text.trim());
-                          if (passValidation != null) {
-                            Fluttertoast.showToast(msg: passValidation);
-                            setState(() => isLoading = false);
-                            return;
-                          }
-
-                          // 3. Email format validation
-                          if (!validInput()) {
-                            Fluttertoast.showToast(msg: "Please enter a valid email address");
-                            setState(() => isLoading = false);
-                            return;
-                          }
-
-                          // 4. Password match validation
-                          if (cpassController.text.trim() != passController.text.trim()) {
-                            Fluttertoast.showToast(msg: "Passwords do not match");
-                            setState(() => isLoading = false);
-                            return;
-                          }
-
-                          final email = emailController.text.trim();
-                          final fullName = nameController.text.trim();
-                          final surName = surNameController.text.trim();
-
-                          // 5. Space check validation
-                          if (!spaceCheck(fullName) ||
-                              !spaceCheck(surName) ||
-                              !spaceCheck(email)) {
-                            Fluttertoast.showToast(msg: "Spaces not allowed in name/surname/email");
-                            setState(() => isLoading = false);
-                            return;
-                          }
-
-                          // 6. Check if email already exists
-                          List<String> methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
-                          if (methods.isNotEmpty) {
-                            Fluttertoast.showToast(msg: "This email is already registered");
-                            setState(() => isLoading = false);
-                            return;
-                          }
-
-                          // 7. Create user in Firebase Auth
-                          UserCredential userCredential = await FirebaseAuth.instance
-                              .createUserWithEmailAndPassword(
-                            email: email,
-                            password: passController.text.trim(),
-                          );
-
-                          final uid = userCredential.user!.uid;
-
-                          // 8. Save user profile to Firestore
-                          await registerUser(
-                            uid: uid,
-                            email: email,
-                            fullName: fullName,
-                            surName: surName,
-                          );
-
-                          // 9. Send verification email
-                          await userCredential.user?.sendEmailVerification();
-                          Fluttertoast.showToast(
-                            msg: "Verification email sent to $email",
-                            backgroundColor: Colors.blue,
-                            toastLength: Toast.LENGTH_LONG,
-                          );
-
-                          // 10. Clear input fields
-                          nameController.clear();
-                          surNameController.clear();
-                          emailController.clear();
-                          passController.clear();
-                          cpassController.clear();
-
-                          // 11. Check verification status
-                          await userCredential.user?.reload();
-                          final currentUser = FirebaseAuth.instance.currentUser;
-
-                          if (currentUser != null && currentUser.emailVerified) {
-                            Fluttertoast.showToast(
-                              msg: "Email verified successfully!",
-                              backgroundColor: Colors.green,
-                            );
-                            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => LoginPage()));
-                          } else {
-                            Fluttertoast.showToast(
-                              msg: "Please check your email and click the verification link",
-                              backgroundColor: Colors.orange,
-                            );
-                          }
-                        } on FirebaseAuthException catch (e) {
-                          Fluttertoast.showToast(
-                            msg: "Error: ${e.message ?? 'Authentication failed'}",
-                            backgroundColor: Colors.red,
-                          );
-                        } catch (e) {
-                          Fluttertoast.showToast(
-                            msg: "An error occurred: ${e.toString()}",
-                            backgroundColor: Colors.red,
-                          );
-                        } finally {
-                          setState(() => isLoading = false);
-                        }
-                      },
-                      icon: isLoading
-                          ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          color: Colors.white,
-                        ),
-                      )
-                          : const Icon(Icons.check_circle),
-                      label: isLoading
-                          ? const Text("Processing...")
-                          : const Text("Register & Verify"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.indigo[800],
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        textStyle: const TextStyle(fontSize: 16),
-                      ),
-                    ),
-
-                    ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-}
-
-class ForgotPasswordPage extends StatefulWidget {
-  @override
-  _ForgotPasswordPageState createState() => _ForgotPasswordPageState();
-}
-
-class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
-  final _formKey = GlobalKey<FormState>();
-  bool isLoading = false;
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwController = TextEditingController();
-  final TextEditingController cpasswController = TextEditingController();
-
-  Future<void> _sendPasswordResetEmail() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => isLoading = true);
-
-    try {
-      final email = emailController.text.trim();
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-
-      Fluttertoast.showToast(
-        msg: "Password reset email sent. Please check your inbox.",
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.BOTTOM,
-      );
-     emailController.clear();
-      Navigator.pop(context);
-    } on FirebaseAuthException catch (e) {
-      String message;
-      switch (e.code) {
-        case 'user-not-found':
-          message = 'No user found with this email.';
-          break;
-        case 'invalid-email':
-          message = 'The email address is not valid.';
-          break;
-        default:
-          message = 'Failed to send reset email: ${e.message}';
-      }
-      Fluttertoast.showToast(msg: message);
-    } catch (e) {
-      Fluttertoast.showToast(msg: 'Error: ${e.toString()}');
-    } finally {
-      if (mounted) setState(() => isLoading = false);
-    }
-  }
+  const _DrawerTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-
-      appBar:AppBar(
-        backgroundColor: Colors.grey[500],
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        leading: Icon(icon, color: Colors.white, size: 26),
         title: Text(
-          "Reset Page",
+          title,
           style: TextStyle(
             color: Colors.white,
-            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
           ),
         ),
-      ),
-      backgroundColor: Colors.grey[600],
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Container(
-              width: double.infinity,
-              height: double.infinity,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage("images/background1.jpg"),
-                  fit: BoxFit.cover,
-                ),
-
-              ),
-              child:Container(
-                width: double.infinity,
-                height: double.infinity,
-                color: (Colors.grey[900] ?? Colors.grey[900])!.withOpacity(.65),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-
-                  SizedBox(height: 30),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                  Center(
-                    child: Container(
-                      height: 250,
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 10,
-                            spreadRadius: 3,
-                          ),
-                        ],
-                      ),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            TextFormField(
-                              controller: emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(15)),
-                                prefixIcon: Icon(Icons.email, color: Colors.indigo[900]),
-                                hintText: "Enter your email",
-                              ),
-                              validator: (value) {
-                                if (value == null ||
-                                    value.isEmpty ||
-                                    !value.contains('@')) {
-                                  return 'Please enter a valid email';
-                                }
-                                return null;
-                              },
-                            ),
-                            SizedBox(height: 12),
-                            ElevatedButton.icon(
-                              onPressed: isLoading ? null : _sendPasswordResetEmail,
-                              icon: isLoading
-                                  ? SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                                  : Icon(Icons.security),
-                              label: Text(isLoading ? "Sending..." : "Send Reset Email"),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.indigo[900],
-                                foregroundColor: Colors.grey[300],
-                                textStyle: TextStyle(fontSize: 18),
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 18, vertical: 12),
-                              ),
-                            ),
-                            // Optional: keep these fields but disabled with explanation
-                            SizedBox(height: 20),
-                            Text(
-                              "You will receive an email to reset your password.\nPlease check your inbox.",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.black54),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-        ],
-            ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        onTap: onTap,
+        contentPadding: EdgeInsets.symmetric(horizontal: 16),
       ),
     );
   }
 }
-//mentee home page
-class MainPage extends StatefulWidget {
-  const MainPage({super.key});
 
-  @override
-  State<MainPage> createState() => _MainPageState();
-}
-class _MainPageState extends State<MainPage> {
-  Future<void> logoutMoodle() async {
-    await TokenService.clearToken();
-  }
 
-  Future<void> logOutFirebase() async {
-    await FirebaseAuth.instance.signOut();
-  }
-
-  String? token;
-  MoodleApiService? moodleService;
-  CalendarProvider? calendarProvider;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeServices();
-  }
-
-  Future<String?> getUsername() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return null;
-
-    final querySnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .where('uid', isEqualTo: uid)
-        .limit(1)
-        .get();
-
-    if (querySnapshot.docs.isNotEmpty) {
-      return querySnapshot.docs.first.get('fullName') as String;
-    } else {
-      return null; // user not found
-    }
-  }
-
-  Future<void> _initializeServices() async {
-    final retrievedToken = await TokenService.getToken();
-    setState(() {
-      token = retrievedToken;
-      moodleService = MoodleApiService(
-        token: retrievedToken ?? '',
-        domain: 'https://courses.ms.wits.ac.za/moodle',
-      );
-      // Initialize calendar provider after moodleService is set
-      calendarProvider = CalendarProvider(moodleService: moodleService!);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      drawer: Drawer(
-        child: Container(
-          color: Colors.grey[100],
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    height: 180,
-                    decoration: BoxDecoration(
-                      color: Colors.orange,
-                      borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(30),
-                        bottomRight: Radius.circular(30),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: 120,
-                    left: 20,
-                    child: CircleAvatar(
-                      radius: 45,
-                      backgroundColor: Colors.white,
-                      backgroundImage: AssetImage('images/user.png'),
-                    ),
-                  ),
-                  Positioned(
-                    top: 140,
-                    left: 120,
-                    child: FutureBuilder<String?>(
-                      future: getUsername(),
-                      builder: (context, snapshot) {
-                        String name = "Hello User";
-                        if (snapshot.connectionState == ConnectionState.done && snapshot.data != null) {
-                          name = "Hello ${snapshot.data}";
-                        }
-                        return Text(
-                          name,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 40),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Column(
-                  children: [
-                    _DrawerTile(
-                      icon: Icons.person,
-                      title: "About Us",
-                      onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => AboutUsPage()));
-                      },
-                    ),
-                    _DrawerTile(
-                      icon: Icons.logout,
-                      title: "Log Out",
-                      onTap: () {
-                        logOutFirebase();
-                        logoutMoodle();
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (context) => Homepage()),
-                              (route) => false,
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              )
-            ],
-          ),
-        ),
-      ),
-
-      resizeToAvoidBottomInset: true,
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.grey[400],
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.black,
-        selectedFontSize: 14,
-        unselectedFontSize: 14,
-        onTap: (value) {
-          if (value == 0) {
-            //tasks
-            Navigator.push(context, MaterialPageRoute(builder: (_) => TasksPage()));
-          } else if (value == 1) {
-            //meetings
-            Navigator.push(context, MaterialPageRoute(builder: (_) => Planner()));
-          }
-        },
-        items: [
-          BottomNavigationBarItem(
-            label: 'Tasks',
-            icon: Badge(
-              backgroundColor: Colors.red,
-              label: Text("", style: TextStyle(color: Colors.white)),
-              child: Icon(Icons.alarm, color: Colors.indigo[900]),
-            ),
-          ),
-          BottomNavigationBarItem(
-            label: 'Planner',
-            backgroundColor: Colors.red,
-            icon:  Icon(Icons.map, color: Colors.indigo[900]),
-          ),
-        ],
-      ),
-      appBar: AppBar(
-          backgroundColor: Colors.grey[200],
-          title: const Text('Moodle Calendar', style: TextStyle(color: Colors.black))
-      ),
-      body:moodleService == null
-          ? Center(child: CircularProgressIndicator())
-          : ChangeNotifierProvider.value(
-        value: calendarProvider!,
-        child: Column(
-          children: [
-
-            Expanded(
-              child: MoodleCalendarWidget(),
-            ),
-          ],
-        ),
-      ),
-      );
-  }
-}
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
 
@@ -1439,16 +681,42 @@ class TasksPage extends StatefulWidget {
 
 class _TasksPageState extends State<TasksPage> {
   @override
-
   Widget build(BuildContext context) {
     return Scaffold(
-
-      body:NotificationsScreen(),
-
+      appBar: AppBar(
+        backgroundColor: Colors.orange[700],
+        elevation: 4,
+        title: Text(
+          'Tasks & Notifications',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        iconTheme: IconThemeData(color: Colors.white),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(15),
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.orange[50]!,
+              Colors.orange[100]!,
+            ],
+          ),
+        ),
+        child: NotificationsScreen(),
+      ),
     );
   }
 }
-
 
 class Planner extends StatefulWidget {
   const Planner({super.key});
@@ -1458,38 +726,112 @@ class Planner extends StatefulWidget {
 }
 
 class _PlannerState extends State<Planner> {
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(onPressed: (){
-            Navigator.push(context, MaterialPageRoute(builder: (_)=>addEvent()));
-      },
-      backgroundColor: Colors.indigo[900],
-      child: Icon(
-        Icons.add,
-        color: Colors.white,
-      ),),
-      appBar: AppBar(
-        title: Text("Planner"),
-        backgroundColor: Colors.grey[200],
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => addEvent()));
+        },
+        backgroundColor: Colors.orange[700],
+        elevation: 8,
+        child: Icon(
+          Icons.add,
+          color: Colors.white,
+          size: 32,
+        ),
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream:FirebaseFirestore.instance.collection('events').orderBy("date",descending: true).snapshots(),
+      appBar: AppBar(
+        title: Text(
+          "My Planner",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        backgroundColor: Colors.orange[700],
+        iconTheme: IconThemeData(color: Colors.white),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(15),
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.orange[50]!,
+              Colors.orange[100]!,
+            ],
+          ),
+        ),
+        child: StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('events')
+              .orderBy("date", descending: true)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.orange[700]!),
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      "Loading events...",
+                      style: TextStyle(
+                        color: Colors.orange[800],
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.event_note,
+                      size: 70,
+                      color: Colors.orange[300],
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      "No events planned yet",
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Colors.orange[800],
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      "Tap the + button to add your first event",
+                      style: TextStyle(
+                        color: Colors.orange[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
 
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text("No events found"));
-          }
+            final docs = snapshot.data!.docs;
 
-          final docs = snapshot.data!.docs;
-
-          return ListView.builder(
+            return ListView.builder(
               itemCount: docs.length,
-              padding: EdgeInsets.all(12),
+              padding: EdgeInsets.all(16),
               itemBuilder: (context, index) {
                 final data = docs[index].data() as Map<String, dynamic>;
                 final String eventName = data['eventName'];
@@ -1504,188 +846,224 @@ class _PlannerState extends State<Planner> {
                     .toString().padLeft(2, '0')}";
 
                 return Container(
-                  margin: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                  child: Stack(
-                    children: [
-                      // Main Card
-                      Card(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+                  margin: EdgeInsets.symmetric(vertical: 8),
+                  child: Card(
+                    elevation: 6,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.white,
+                            Colors.orange[50]!,
+                          ],
                         ),
-                        elevation: 8,
-                        shadowColor: Colors.indigo.withOpacity(0.3),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            gradient: LinearGradient(
-                              colors: [Colors.white, Colors.indigo.shade50],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.orange.withOpacity(0.1),
+                            blurRadius: 10,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Stack(
+                        children: [
+                          // Orange accent strip
+                          Positioned(
+                            left: 0,
+                            top: 0,
+                            bottom: 0,
+                            child: Container(
+                              width: 6,
+                              decoration: BoxDecoration(
+                                color: Colors.orange[400],
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(16),
+                                  bottomLeft: Radius.circular(16),
+                                ),
+                              ),
                             ),
                           ),
-                          padding: EdgeInsets.all(18),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Event Name & Delete
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      eventName,
+                          Padding(
+                            padding: const EdgeInsets.only(
+                                left: 20, right: 12, top: 20, bottom: 20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Event header with delete button
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        eventName,
+                                        style: TextStyle(
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.orange[900],
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (_) => AlertDialog(
+                                            backgroundColor: Colors.white,
+                                            title: Text(
+                                              "Delete Event",
+                                              style: TextStyle(
+                                                color: Colors.orange[900],
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            content: Text(
+                                                "Are you sure you want to delete this event?"),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(context),
+                                                child: Text(
+                                                  "Cancel",
+                                                  style: TextStyle(
+                                                      color: Colors.grey[600]),
+                                                ),
+                                              ),
+                                              TextButton(
+                                                onPressed: () async {
+                                                  FirebaseFirestore.instance
+                                                      .collection('events')
+                                                      .doc(docs[index].id)
+                                                      .delete();
+                                                  Navigator.pop(context);
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                          "Event deleted successfully"),
+                                                      backgroundColor:
+                                                      Colors.orange[700],
+                                                    ),
+                                                  );
+                                                },
+                                                child: Text(
+                                                  "Delete",
+                                                  style: TextStyle(
+                                                      color: Colors.red),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                      icon: Icon(Icons.delete,
+                                          color: Colors.redAccent),
+                                      tooltip: "Delete Event",
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 15),
+
+                                // Date and time information
+                                Row(
+                                  children: [
+                                    Icon(Icons.calendar_today,
+                                        size: 22, color: Colors.orange[700]),
+                                    SizedBox(width: 10),
+                                    Text(
+                                      formattedDate,
                                       style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.indigo[900],
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.grey[800],
                                       ),
-                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 10),
+
+                                Row(
+                                  mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(Icons.access_time,
+                                            size: 22, color: Colors.orange[700]),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          "Start: $formattedTime",
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.grey[700],
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.access_time,
+                                            size: 22, color: Colors.orange[700]),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          "End: $endTime",
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.grey[700],
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 15),
+
+                                // Description
+                                Container(
+                                  width: double.infinity,
+                                  padding: EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withOpacity(0.08),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.orange.withOpacity(0.2),
+                                      width: 1,
                                     ),
                                   ),
-                                  IconButton(
-                                    onPressed: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (_) => AlertDialog(
-                                          title: const Text("Delete event"),
-                                          content: const Text("Are you sure you want to delete this event?"),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(context),
-                                              child: const Text("Cancel"),
-                                            ),
-                                            TextButton(
-                                              onPressed: () async {
-                                                FirebaseFirestore.instance
-                                                    .collection('events')
-                                                    .doc(docs[index].id)
-                                                    .delete();
-
-
-                                                Navigator.pop(context);
-                                              },
-                                              child: const Text("Delete", style: TextStyle(color: Colors.red)),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                    icon: Icon(Icons.delete, color: Colors.redAccent),
-                                    tooltip: "Delete Event",
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 10),
-
-                              // Date Row
-                              Row(
-                                children: [
-                                  Icon(Icons.calendar_today,
-                                      size: 20, color: Colors.indigo[700]),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    formattedDate,
+                                  child: Text(
+                                    eventDescription,
                                     style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
+                                      fontSize: 15,
                                       color: Colors.grey[800],
+                                      height: 1.4,
                                     ),
                                   ),
-                                ],
-                              ),
-                              SizedBox(height: 8),
-
-                              // Time Row
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.access_time,
-                                          size: 20, color: Colors.indigo[700]),
-                                      SizedBox(width: 6),
-                                      Text(
-                                        "Start: $formattedTime",
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          color: Colors.grey[700],
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.access_time,
-                                          size: 20, color: Colors.indigo[700]),
-                                      SizedBox(width: 6),
-                                      Text(
-                                        "End: $endTime",
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          color: Colors.grey[700],
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 14),
-
-                              // Description Box
-                              Container(
-                                width: double.infinity,
-                                padding: EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: Colors.indigo.withOpacity(0.07),
-                                  borderRadius: BorderRadius.circular(14),
                                 ),
-                                child: Text(
-                                  eventDescription,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.grey[800],
-                                    fontStyle: FontStyle.italic,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Timeline / Event Indicator Strip
-                      Positioned(
-                        left: 0,
-                        top: 0,
-                        bottom: 0,
-                        child: Container(
-                          width: 6,
-                          decoration: BoxDecoration(
-                            color: Colors.indigo, // you can change based on urgency
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(20),
-                              bottomLeft: Radius.circular(20),
+                              ],
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 );
-
-
-              }
-          );
-        }
-
-    ),
-
+              },
+            );
+          },
+        ),
+      ),
     );
   }
 }
+
 class addEvent extends StatefulWidget {
   const addEvent({super.key});
 
@@ -1694,12 +1072,13 @@ class addEvent extends StatefulWidget {
 }
 
 class _addEventState extends State<addEvent> {
-  final TextEditingController date=TextEditingController();
-  final TextEditingController startTime=TextEditingController();
-  final TextEditingController endTime=TextEditingController();
-  final TextEditingController description=TextEditingController();
-  final TextEditingController eventName=TextEditingController();
-  final _formkey=GlobalKey<FormState>();
+  final TextEditingController date = TextEditingController();
+  final TextEditingController startTime = TextEditingController();
+  final TextEditingController endTime = TextEditingController();
+  final TextEditingController description = TextEditingController();
+  final TextEditingController eventName = TextEditingController();
+  final _formkey = GlobalKey<FormState>();
+
   DateTime parseDateTime(String dateStr, String timeStr) {
     // Split date
     final parts = dateStr.split("/");
@@ -1716,162 +1095,310 @@ class _addEventState extends State<addEvent> {
     return DateTime(year, month, day, hour, minute);
   }
 
-  Future<void>uploadEvent(String eventName,String description,String dateStr,String timeStr,String endTime) async{
-      final userId=FirebaseAuth.instance.currentUser?.uid;
-      final date=parseDateTime(dateStr, timeStr);
-      try {
-        await FirebaseFirestore.instance.collection('events').add({
-          'userId': userId,
-          'startTime': timeStr,
-          'endTime': endTime,
-          'date': date,
-          'description': description,
-          'eventName': eventName??"Unknown",
-        });
-        Fluttertoast.showToast(msg: "event added");
-      }catch(e){
-        Fluttertoast.showToast(msg: "add event failed");
-      }
-}
+  Future<void> uploadEvent(String eventName, String description, String dateStr,
+      String timeStr, String endTime) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    final date = parseDateTime(dateStr, timeStr);
+    try {
+      await FirebaseFirestore.instance.collection('events').add({
+        'userId': userId,
+        'startTime': timeStr,
+        'endTime': endTime,
+        'date': date,
+        'description': description ?? "Unknown",
+        'eventName': eventName ?? "Unknown",
+      });
+      Fluttertoast.showToast(
+          msg: "Event added successfully!",
+          backgroundColor: Colors.orange[700],
+          textColor: Colors.white);
+    } catch (e) {
+      Fluttertoast.showToast(
+          msg: "Failed to add event",
+          backgroundColor: Colors.red,
+          textColor: Colors.white);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Add Event"),
-        backgroundColor: Colors.grey[200],
+        title: Text(
+          "Add New Event",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        backgroundColor: Colors.orange[700],
+        iconTheme: IconThemeData(color: Colors.white),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(15),
+          ),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child:Form(
-          key:_formkey,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          child:   Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-
-              TextFormField(
-                validator:(value){
-
-                },
-                controller: eventName,
-                decoration: InputDecoration(
-                  labelText: "Event Name",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 12),
-
-              TextFormField(
-                validator:(value){
-                    if(value==null ||value.isEmpty){
-                      return "description required";
-                    }
-                },
-                controller:description,
-                decoration: InputDecoration(
-                  labelText: "Description",
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-              SizedBox(height: 12),
-
-              TextFormField(
-                validator:(value){
-                  if(value==null || value.isEmpty){
-                    return "Start time is required";
-                  }
-                  if(!RegExp(r'^(?:[01]\d|2[0-3]):[0-5]\d$').hasMatch(value!) ){
-                    return "Invalid time format";
-                  }
-                  return null;
-
-
-                },
-                controller:startTime,
-                decoration: InputDecoration(
-                  labelText: "Start Time",
-                  border: OutlineInputBorder(),
-                  hintText: "HH:MM",
-                ),
-              ),
-              SizedBox(height: 12),
-
-
-              TextFormField(
-                validator:(value){
-                  if(value==null || value.isEmpty){
-                    return "End time is required";
-                  }
-                  if(!RegExp(r'^(?:[01]\d|2[0-3]):[0-5]\d$').hasMatch(value!) ){
-                    return "Invalid time ";
-                  }
-                  return null;
-
-                },
-                controller:endTime,
-                decoration: InputDecoration(
-                  labelText: "End Time",
-                  border: OutlineInputBorder(),
-                  hintText: "HH:MM",
-                ),
-              ),
-              SizedBox(height: 12),
-
-
-              TextFormField(
-                validator:(value){
-                  if(value==null || value.isEmpty){
-                    return "Date is required";
-                  }
-                    if(!RegExp(r'^\d{2}/\d{1,2}/\d{4}$').hasMatch(value!) ){
-                          return "Invalid date format";
-                    }
-                    return null;
-                },
-                controller:date,
-                decoration: InputDecoration(
-                  labelText: "Date of Event",
-                  border: OutlineInputBorder(),
-                  hintText: "DD/MM/YYYY",
-                  prefixIcon: Icon(Icons.calendar_today),
-                ),
-              ),
-              SizedBox(height: 24),
-
-
-              ElevatedButton(
-                onPressed: () {
-                  if(_formkey.currentState!.validate()){
-                    final event_name=eventName.text.toString();
-                    final str_time=startTime.text.toString();
-                    final end_time=endTime.text.toString();
-                    final desc=description.text.toString();
-                    final dt=date.text.toString();
-                    uploadEvent( event_name, desc, dt, str_time, end_time);
-                    eventName.clear();
-                    description.clear();
-                    startTime.clear();
-                    endTime.clear();
-                    date.clear();
-                    _formkey.currentState?.reset();
-
-                  }
-
-                },
-                style: ElevatedButton.styleFrom(
-                  minimumSize: Size(double.infinity, 50),
-                  backgroundColor: Colors.indigo[800],
-                ),
-                child: Text(
-                  "Add Event",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.orange[50]!,
+              Colors.orange[100]!,
             ],
           ),
-        ) ,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Form(
+            key: _formkey,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Center(
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.event,
+                          size: 50,
+                          color: Colors.orange[700],
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          "Plan Your Event",
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange[900],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 5),
+                  Center(
+                    child: Text(
+                      "Fill in the details below to create a new event",
+                      style: TextStyle(
+                        color: Colors.orange[700],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 25),
 
+                  // Event Name
+                  TextFormField(
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Event name is required";
+                      }
+                      return null;
+                    },
+                    controller: eventName,
+                    decoration: InputDecoration(
+                      labelText: "Event Name",
+                      labelStyle: TextStyle(color: Colors.orange[700]),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.orange[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.orange[700]!, width: 2),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      prefixIcon: Icon(Icons.event, color: Colors.orange[700]),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+
+                  // Description
+                  TextFormField(
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Description is required";
+                      }
+                      return null;
+                    },
+                    controller: description,
+                    decoration: InputDecoration(
+                      labelText: "Description",
+                      labelStyle: TextStyle(color: Colors.orange[700]),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.orange[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.orange[700]!, width: 2),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                    maxLines: 3,
+                  ),
+                  SizedBox(height: 16),
+
+                  // Time inputs in a row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Start time is required";
+                            }
+                            if (!RegExp(r'^(?:[01]\d|2[0-3]):[0-5]\d$')
+                                .hasMatch(value!)) {
+                              return "Invalid time format (HH:MM)";
+                            }
+                            return null;
+                          },
+                          controller: startTime,
+                          decoration: InputDecoration(
+                            labelText: "Start Time",
+                            labelStyle: TextStyle(color: Colors.orange[700]),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.orange[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide:
+                              BorderSide(color: Colors.orange[700]!, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            hintText: "HH:MM",
+                            prefixIcon:
+                            Icon(Icons.access_time, color: Colors.orange[700]),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "End time is required";
+                            }
+                            if (!RegExp(r'^(?:[01]\d|2[0-3]):[0-5]\d$')
+                                .hasMatch(value!)) {
+                              return "Invalid time format (HH:MM)";
+                            }
+                            return null;
+                          },
+                          controller: endTime,
+                          decoration: InputDecoration(
+                            labelText: "End Time",
+                            labelStyle: TextStyle(color: Colors.orange[700]),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.orange[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide:
+                              BorderSide(color: Colors.orange[700]!, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            hintText: "HH:MM",
+                            prefixIcon:
+                            Icon(Icons.access_time, color: Colors.orange[700]),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+
+                  // Date
+                  TextFormField(
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Date is required";
+                      }
+                      if (!RegExp(r'^\d{2}/\d{1,2}/\d{4}$').hasMatch(value!)) {
+                        return "Invalid date format (DD/MM/YYYY)";
+                      }
+                      return null;
+                    },
+                    controller: date,
+                    decoration: InputDecoration(
+                      labelText: "Date of Event",
+                      labelStyle: TextStyle(color: Colors.orange[700]),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.orange[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.orange[700]!, width: 2),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      hintText: "DD/MM/YYYY",
+                      prefixIcon: Icon(Icons.calendar_today, color: Colors.orange[700]),
+                    ),
+                  ),
+                  SizedBox(height: 30),
+
+                  // Submit Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (_formkey.currentState!.validate()) {
+                          final event_name = eventName.text.toString();
+                          final str_time = startTime.text.toString();
+                          final end_time = endTime.text.toString();
+                          final desc = description.text.toString();
+                          final dt = date.text.toString();
+                          uploadEvent(event_name, desc, dt, str_time, end_time);
+                          eventName.clear();
+                          description.clear();
+                          startTime.clear();
+                          endTime.clear();
+                          date.clear();
+                          _formkey.currentState?.reset();
+
+                          // Navigate back after successful submission
+                          Navigator.pop(context);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange[700],
+                        padding: EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 4,
+                        shadowColor: Colors.orange.withOpacity(0.3),
+                      ),
+                      child: Text(
+                        "Add Event",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1883,13 +1410,67 @@ class Notifications_screen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Notifications")),
-      body: const Center(
-        child: Text("Opened from a notification"),
+      appBar: AppBar(
+        title: Text(
+          "Notifications",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Colors.orange[700],
+        iconTheme: IconThemeData(color: Colors.white),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(15),
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.orange[50]!,
+              Colors.orange[100]!,
+            ],
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.notifications_active,
+                size: 60,
+                color: Colors.orange[400],
+              ),
+              SizedBox(height: 20),
+              Text(
+                "Notification Center",
+                style: TextStyle(
+                  fontSize: 22,
+                  color: Colors.orange[800],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 10),
+              Text(
+                "Your notifications will appear here",
+                style: TextStyle(
+                  color: Colors.orange[600],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
+
+
 class AboutUsPage extends StatelessWidget {
   final String appName;
   const AboutUsPage({super.key, this.appName = "MoodleTrack"});
@@ -1899,126 +1480,230 @@ class AboutUsPage extends StatelessWidget {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text("About $appName"),
-        backgroundColor: Colors.grey[200],
-        foregroundColor: Colors.black, // changed to black for other texts
+        title: Text(
+          "About $appName",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Colors.orange[600],
+        iconTheme: IconThemeData(color: Colors.white),
         elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(15),
+          ),
+        ),
       ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 680),
-            child: ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                Text(
-                  appName,
-                  style: theme.textTheme.displaySmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: Colors.orange, // only app name is orange
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.orange[50]!,
+              Colors.orange[100]!,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 680),
+              child: ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  // App Logo/Icon
+                  Center(
+                    child: Icon(
+                      Icons.school,
+                      size: 80,
+                      color: Colors.orange[700],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "Your all-in-one student companion at Wits. MoodleTrack helps you stay on top of your courses, tasks, and deadlines effortlessly.",
-                  style: theme.textTheme.bodyLarge,
-                ),
-                const SizedBox(height: 24),
-                Card(
-                  elevation: 2,
-                  shadowColor: Colors.grey[200],
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+                  const SizedBox(height: 16),
+
+                  // App Name
+                  Center(
+                    child: Text(
+                      appName,
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.orange[700],
+                      ),
+                    ),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "What MoodleTrack Offers",
-                          style: theme.textTheme.titleLarge?.copyWith(
+                  const SizedBox(height: 12),
+
+                  // Description
+                  Text(
+                    "Your all-in-one student companion at Wits. MoodleTrack helps you stay on top of your courses, tasks, and deadlines effortlessly.",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[700],
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Features Card
+                  Card(
+                    elevation: 4,
+                    shadowColor: Colors.orange.withOpacity(0.2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.white,
+                            Colors.orange[50]!,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Center(
+                            child: Text(
+                              "What MoodleTrack Offers",
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.orange[800],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          _FeatureRow(
+                            icon: Icons.event_note_outlined,
+                            title: "Tasks & Deadlines",
+                            subtitle: "View all your course tasks and upcoming due dates in one place.",
+                            color: Colors.orange[700]!,
+                          ),
+                          _FeatureRow(
+                            icon: Icons.calendar_today_outlined,
+                            title: "Calendar View",
+                            subtitle: "See your upcoming events and deadlines at a glance.",
+                            color: Colors.orange[700]!,
+                          ),
+                          _FeatureRow(
+                            icon: Icons.notifications_active_outlined,
+                            title: "Reminders & Notifications",
+                            subtitle: "Set reminders for events and get notified so you never miss anything.",
+                            color: Colors.orange[700]!,
+                          ),
+                          _FeatureRow(
+                            icon: Icons.assignment_outlined,
+                            title: "Planner",
+                            subtitle: "Plan and organize your academic schedule effectively.",
+                            color: Colors.orange[700]!,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Why MoodleTrack
+                  Text(
+                    "Why MoodleTrack Exists",
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.orange[800],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "$appName brings your Moodle courses and student life together so you can focus on learning and staying organized. We understand the challenges of managing multiple courses and deadlines, and we're here to make your academic journey smoother.",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[700],
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Tags
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: const [
+                      _Tag(label: "Tasks", color: Colors.orange),
+                      _Tag(label: "Calendar", color: Colors.orange),
+                      _Tag(label: "Reminders", color: Colors.orange),
+
+                      _Tag(label: "Planner", color: Colors.orange),
+
+                    ],
+                  ),
+                  const SizedBox(height: 40),
+
+                  // Developer Info
+                  Divider(color: Colors.orange[300]),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Colors.orange[700],
+                        child: Text(
+                          "MC",
+                          style: TextStyle(
+                            fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: Colors.black,
+                            color: Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        _FeatureRow(
-                          icon: Icons.event_note_outlined,
-                          title: "Tasks & Deadlines",
-                          subtitle: "View all your course tasks and upcoming due dates in one place.",
-                          color: Colors.black,
-                        ),
-                        _FeatureRow(
-                          icon: Icons.calendar_today_outlined,
-                          title: "Calendar View",
-                          subtitle: "See your upcoming events and deadlines at a glance.",
-                          color: Colors.black,
-                        ),
-                        _FeatureRow(
-                          icon: Icons.notifications_active_outlined,
-                          title: "Reminders & Notifications",
-                          subtitle: "Set reminders for events and get notified so you never miss anything.",
-                          color: Colors.black,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  "Why MoodleTrack Exists",
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "$appName brings your Moodle courses and student life together so you can focus on learning and staying organized.",
-                  style: theme.textTheme.bodyLarge,
-                ),
-                const SizedBox(height: 24),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: const [
-                    _Tag(label: "Tasks"),
-                    _Tag(label: "Calendar"),
-                    _Tag(label: "Reminders"),
-                    _Tag(label: "Notifications"),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                Divider(color: theme.colorScheme.outlineVariant),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 22,
-                      backgroundColor: Colors.black,
-                      child: Text(
-                        "MC",
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Developed by Mahlatse Clayton Maredi",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.orange[800],
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              "For Wits University Students",
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        "Developed by Mahlatse Clayton Maredi",
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: Colors.black,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Version Info
+                  Center(
+                    child: Text(
+                      "Version 1.0.0",
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontStyle: FontStyle.italic,
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -2032,6 +1717,7 @@ class _FeatureRow extends StatelessWidget {
   final String title;
   final String subtitle;
   final Color color;
+
   const _FeatureRow({
     required this.icon,
     required this.title,
@@ -2041,21 +1727,34 @@ class _FeatureRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 28, color: color),
-          const SizedBox(width: 12),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: color)),
-                const SizedBox(height: 2),
-                Text(subtitle, style: theme.textTheme.bodyMedium),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.orange[800],
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                    height: 1.4,
+                  ),
+                ),
               ],
             ),
           ),
@@ -2067,42 +1766,488 @@ class _FeatureRow extends StatelessWidget {
 
 class _Tag extends StatelessWidget {
   final String label;
-  const _Tag({required this.label});
+  final Color color;
+
+  const _Tag({required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.indigo[50],
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.indigo[100]!),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Text(
         label,
-        style: TextStyle(color: Colors.indigo[900], fontWeight: FontWeight.w500),
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
 }
 
-class _DrawerTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final VoidCallback onTap;
-  const _DrawerTile({required this.icon, required this.title, required this.onTap});
+class MainPage extends StatefulWidget {
+  const MainPage({super.key});
+
+  @override
+  State<MainPage> createState() => _MainPageState();
+}
+
+class _MainPageState extends State<MainPage> {
+  String? token;
+  bool _isInitializing = true;
+  String? _username;
+  String? _fullName;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeServices();
+  }
+
+  Future<void> _initializeServices() async {
+    try {
+      final retrievedToken = await TokenService.getToken();
+      setState(() {
+        token = retrievedToken;
+        _isInitializing = false;
+      });
+
+      // Get user info from Moodle after token is retrieved
+      if (token != null) {
+        await _getMoodleUserInfo();
+      }
+    } catch (error) {
+      print('❌ Error initializing services: $error');
+      setState(() {
+        _isInitializing = false;
+      });
+    }
+  }
+
+  /// ✅ Get user information from Moodle using the stored token
+  Future<void> _getMoodleUserInfo() async {
+    try {
+      // First, try to get basic site info which includes user details
+      final siteInfoResponse = await http.get(
+        Uri.parse(
+            'https://courses.ms.wits.ac.za/moodle/webservice/rest/server.php?wstoken=$token&wsfunction=core_webservice_get_site_info&moodlewsrestformat=json'),
+      );
+
+      if (siteInfoResponse.statusCode == 200) {
+        final siteData = json.decode(siteInfoResponse.body);
+        final String username = siteData['username']?.toString() ?? '';
+        final String fullname = siteData['fullname']?.toString() ?? '';
+
+        if (fullname.isNotEmpty) {
+          setState(() {
+            _username = username;
+            _fullName = fullname;
+          });
+          print('✅ Retrieved Moodle user: $fullname ($username)');
+          return;
+        }
+      }
+
+      // If site info doesn't contain full name, try to get user profile
+      await _getUserProfileFromMoodle();
+
+    } catch (e) {
+      print('❌ Error getting Moodle user info: $e');
+      // Fallback to student number from email
+      _getUsernameFromEmail();
+    }
+  }
+
+  /// ✅ Get detailed user profile from Moodle
+  Future<void> _getUserProfileFromMoodle() async {
+    try {
+      // Get current user's ID first from site info
+      final siteInfoResponse = await http.get(
+        Uri.parse(
+            'https://courses.ms.wits.ac.za/moodle/webservice/rest/server.php?wstoken=$token&wsfunction=core_webservice_get_site_info&moodlewsrestformat=json'),
+      );
+
+      if (siteInfoResponse.statusCode == 200) {
+        final siteData = json.decode(siteInfoResponse.body);
+        final int userId = siteData['userid'] ?? 0;
+
+        if (userId > 0) {
+          // Now get user profile details
+          final profileResponse = await http.get(
+            Uri.parse(
+                'https://courses.ms.wits.ac.za/moodle/webservice/rest/server.php?wstoken=$token&wsfunction=core_user_get_users_by_field&field=id&values[0]=$userId&moodlewsrestformat=json'),
+          );
+
+          if (profileResponse.statusCode == 200) {
+            final profileData = json.decode(profileResponse.body);
+            if (profileData is List && profileData.isNotEmpty) {
+              final user = profileData[0];
+              final String fullname = user['fullname']?.toString() ?? '';
+              final String username = user['username']?.toString() ?? '';
+
+              if (fullname.isNotEmpty) {
+                setState(() {
+                  _fullName = fullname;
+                  _username = username;
+                });
+                print('✅ Retrieved Moodle profile: $fullname ($username)');
+                return;
+              }
+            }
+          }
+        }
+      }
+
+      // If all else fails, fallback to email
+      _getUsernameFromEmail();
+
+    } catch (e) {
+      print('❌ Error getting Moodle profile: $e');
+      _getUsernameFromEmail();
+    }
+  }
+
+  /// ✅ Fallback: Get username from Firebase Auth email
+  Future<void> _getUsernameFromEmail() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null && user.email != null) {
+      // Extract student number from email (e.g., 1234567@students.wits.ac.za)
+      final email = user.email!;
+      if (email.contains('@students.wits.ac.za')) {
+        final studentNumber = email.split('@').first;
+        setState(() {
+          _username = studentNumber;
+          _fullName = 'Student $studentNumber';
+        });
+      } else {
+        setState(() {
+          _username = user.email!.split('@').first;
+          _fullName = user.displayName ?? 'User';
+        });
+      }
+    } else {
+      setState(() {
+        _fullName = 'Student';
+      });
+    }
+  }
+
+  Future<void> logoutMoodle() async {
+    await TokenService.clearToken();
+  }
+
+  Future<void> logOutFirebase() async {
+    await FirebaseAuth.instance.signOut();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.symmetric(vertical: 6),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      elevation: 2,
-      child: ListTile(
-        leading: Icon(icon, color: Colors.indigo[900]),
-        title: Text(title, style: TextStyle(fontWeight: FontWeight.w600)),
-        onTap: onTap,
+    if (_isInitializing) {
+      return Scaffold(
+        backgroundColor: Colors.orange[50],
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.orange[600]!),
+              ),
+              SizedBox(height: 20),
+              Text(
+                "Loading your calendar...",
+                style: TextStyle(
+                  color: Colors.orange[600],
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final moodleService = MoodleApiService(
+      token: token ?? '',
+      domain: 'https://courses.ms.wits.ac.za/moodle',
+    );
+
+    return ChangeNotifierProvider(
+      create: (context) {
+        final provider = CalendarProvider(moodleService: moodleService);
+        provider.loadEvents();
+        return provider;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.orange[50],
+        drawer: Drawer(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.orange[200]!,
+                  Colors.orange[100]!,
+                  Colors.orange[50]!,
+                ],
+              ),
+            ),
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                // Drawer Header
+                Container(
+                  height: 220,
+                  padding: const EdgeInsets.only(top: 50, left: 20, bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.orange[400]!.withOpacity(0.9),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(30),
+                      bottomRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundColor: Colors.white,
+                        backgroundImage: AssetImage('images/user.png'),
+                      ),
+                      SizedBox(width: 15),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _fullName ?? "Welcome",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 2,
+                            ),
+                            SizedBox(height: 5),
+                            if (_username != null)
+                              Text(
+                                "@${_username!}",
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.8),
+                                  fontSize: 14,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            SizedBox(height: 8),
+                            Text(
+                              "MoodleTrack Student",
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Drawer Items
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+                  child: Column(
+                    children: [
+                      _DrawerTile(
+                        icon: Icons.person,
+                        title: "About Us",
+                        onTap: () {
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (_) => AboutUsPage()));
+                        },
+                      ),
+                      SizedBox(height: 10),
+                      _DrawerTile(
+                        icon: Icons.logout,
+                        title: "Log Out",
+                        onTap: () async {
+                          await logOutFirebase();
+                          await logoutMoodle();
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(builder: (context) => Homepage()),
+                                (route) => false,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                )
+              ],
+            ),
+          ),
+        ),
+        // ... rest of the build method remains the same
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.orange.withOpacity(0.1),
+                blurRadius: 10,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            selectedItemColor: Colors.orange[700],
+            unselectedItemColor: Colors.grey[600],
+            selectedFontSize: 14,
+            unselectedFontSize: 14,
+            elevation: 8,
+            onTap: (value) {
+              if (value == 0) {
+                Navigator.push(
+                    context, MaterialPageRoute(builder: (_) => TasksPage()));
+              } else if (value == 1) {
+                Navigator.push(
+                    context, MaterialPageRoute(builder: (_) => Planner()));
+              }
+            },
+            items: [
+              BottomNavigationBarItem(
+                label: 'Tasks',
+                icon: Icon(Icons.task_alt, size: 28),
+              ),
+              BottomNavigationBarItem(
+                label: 'Planner',
+                icon: Icon(Icons.calendar_today, size: 28),
+              ),
+            ],
+          ),
+        ),
+        appBar: AppBar(
+          backgroundColor: Colors.orange[700],
+          elevation: 0,
+          title: Text(
+            'Moodle Calendar',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          iconTheme: IconThemeData(color: Colors.white),
+        ),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.orange[50]!,
+                Colors.orange[100]!,
+              ],
+            ),
+          ),
+          child: Consumer<CalendarProvider>(
+            builder: (context, provider, child) {
+              if (provider.isLoading) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.orange[700]!),
+                      ),
+                      SizedBox(height: 20),
+                      Text(
+                        "Loading events...",
+                        style: TextStyle(
+                          color: Colors.orange[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              if (provider.errorMessage != null) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 50,
+                        color: Colors.orange[600],
+                      ),
+                      SizedBox(height: 20),
+                      Text(
+                        'Error: ${provider.errorMessage}',
+                        style: TextStyle(
+                          color: Colors.orange[800],
+                          fontSize: 16,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: () => provider.loadEvents(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange[700],
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text('Retry'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              if (provider.events.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.event_note,
+                        size: 60,
+                        color: Colors.orange[300],
+                      ),
+                      SizedBox(height: 20),
+                      Text(
+                        'No events available',
+                        style: TextStyle(
+                          color: Colors.orange[800],
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        'Check back later for upcoming events',
+                        style: TextStyle(
+                          color: Colors.orange[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return MoodleCalendarWidget();
+            },
+          ),
+        ),
       ),
     );
   }
