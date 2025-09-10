@@ -32,7 +32,7 @@ class MoodleApiService {
       }
       return [];
     } catch (e) {
-      print('Error fetching Moodle events: $e');
+
       rethrow; // Changed from return [] to rethrow so error can be caught by provider
     }
   }

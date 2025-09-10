@@ -19,75 +19,154 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:learning_app/LocalNotificationsService.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+
+// Create a single instance of the plugin
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 FlutterLocalNotificationsPlugin();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  tz.initializeTimeZones();
 
   try {
+    // Initialize Firebase
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    print('Firebase initialized!');
+    print('Firebase initialized successfully');
   } catch (e) {
-    print('Firebase failed to initialize: $e');
+    print('Firebase initialization failed: $e');
   }
 
-  // Initialize timezones (needed for scheduled notifications)
+  // Initialize notifications service - this will be done again in AuthCheck but that's okay
+  try {
+    await LocalNotificationsService.initialize();
+    print('LocalNotificationsService initialized successfully in main');
+  } catch (e) {
+    print('LocalNotificationsService initialization failed: $e');
+  }
 
-  tz.setLocalLocation(tz.getLocation('Africa/Johannesburg')); // set your local timezone
-
-  // Initialize local notifications
-  const AndroidInitializationSettings androidSettings =
-  AndroidInitializationSettings('@mipmap/ic_launcher');
-
-  final DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
-    requestSoundPermission: true,
-    requestBadgePermission: true,
-    requestAlertPermission: true,
-    onDidReceiveLocalNotification: (id, title, body, payload) async {
-      print('iOS Notification Received: $title | $body');
-      // Handle notification tapped if needed
-    },
-  );
-
-  final InitializationSettings initializationSettings = InitializationSettings(
-    android: androidSettings,
-    iOS: iosSettings,
-  );
-
-  await flutterLocalNotificationsPlugin.initialize(
-    initializationSettings,
-    onDidReceiveNotificationResponse: (NotificationResponse response) {
-      print('Notification tapped: ${response.payload}');
-      // Navigate to event details if needed
-    },
-  );
-
-  runApp(AuthCheck()); // replace with your main app widget
+  // Use AuthCheck instead of NotificationTestApp for your real app
+  runApp(AuthCheck());
 }
+class NotificationTestApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(title: Text("Notification Test")),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: () async {
+                  // Test immediate notification
+                  await LocalNotificationsService.showNotification(
+                    "Test Immediate",
+                    "This should show right away",
+                  );
+                },
+                child: Text("Show Immediate Notification"),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () async {
+                  // Test scheduled notification (10 seconds from now)
+                  final scheduledTime = tz.TZDateTime.now(tz.local).add(Duration(seconds: 10));
 
+                  await LocalNotificationsService.scheduleNotification(
+                    id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                    title: "Test Scheduled",
+                    body: "This should appear in 10 seconds",
+                    scheduledTime: scheduledTime,
+                  );
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Notification scheduled for 10 seconds from now")),
+                  );
+                },
+                child: Text("Schedule Test Notification (10s)"),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () async {
+                  final pending = await LocalNotificationsService.getPendingNotifications();
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text("Pending Notifications"),
+                      content: Text("Count: ${pending.length}\n" +
+                          pending.map((n) => "ID: ${n.id}, Title: ${n.title}").join("\n")),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text("OK"),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                child: Text("Check Pending Notifications"),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 class AuthCheck extends StatefulWidget {
   const AuthCheck({super.key});
 
   @override
   State<AuthCheck> createState() => _AuthCheckState();
 }
-
 class _AuthCheckState extends State<AuthCheck> {
-  final _notificationService = NotificationService(); // <-- your service class
+  bool _notificationsInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    // Initialize notifications
-    _notificationService.initNotifications(context);
+
+    _checkNotificationStatus();
+  }
+
+  Future<void> _checkNotificationStatus() async {
+    try {
+      // Just check if notifications are working
+      final pending = await LocalNotificationsService.getPendingNotifications();
+
+
+      final canScheduleExact = await LocalNotificationsService.canScheduleExactNotifications();
+
+
+      setState(() {
+        _notificationsInitialized = true;
+      });
+
+
+    } catch (e) {
+
+      try {
+        await LocalNotificationsService.initialize();
+
+        setState(() {
+          _notificationsInitialized = true;
+        });
+      } catch (e2) {
+        print('AuthCheck - Re-initialization failed: $e2');
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return  MaterialApp(
+    print('AuthCheck build called, notifications initialized: $_notificationsInitialized');
+
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
       routes: {
         "/notifications": (context) => const Notifications_screen(),
@@ -97,12 +176,24 @@ class _AuthCheckState extends State<AuthCheck> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 20),
+                    Text('Loading...'),
+                  ],
+                ),
+              ),
             );
           }
+
           if (snapshot.hasData) {
+
             return MainPage();
           } else {
+
             return const Homepage();
           }
         },
@@ -110,14 +201,12 @@ class _AuthCheckState extends State<AuthCheck> {
     );
   }
 }
-
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
 
   @override
   State<Homepage> createState() => _HomepageState();
 }
-
 class _HomepageState extends State<Homepage> {
   @override
   Widget build(BuildContext context) {
@@ -252,14 +341,12 @@ class _HomepageState extends State<Homepage> {
     );
   }
 }
-
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
 
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
-
 class _LoginPageState extends State<LoginPage> {
   bool isLoading = false;
   bool _obscurePassword = true;
@@ -639,7 +726,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-
 class _DrawerTile extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -1369,50 +1455,122 @@ class _addEventState extends State<addEvent> {
                             final desc = description.text.toString();
                             final dt = date.text.toString();
 
-                            // Parse start time
-                            final eventStartDateTime = parseDateTime(dt, str_time);
+                            print('=== DEBUG EVENT CREATION ===');
+                            print('Event Name: $event_name');
+                            print('Start Time: $str_time');
+                            print('End Time: $end_time');
+                            print('Date: $dt');
+                            print('Description: $desc');
 
-                            // Upload event to Firestore
-                            await uploadEvent(event_name, desc, dt, str_time, end_time);
+                            try {
+                              // Parse start time
+                              final eventStartDateTime = parseDateTime(dt, str_time);
+                              print('DEBUG - Parsed eventStartDateTime: $eventStartDateTime');
 
-                            // Schedule local notification 10 minutes before the event
-                            final notificationTime = eventStartDateTime.subtract(const Duration(minutes: 10));
+                              // Get South African timezone location
+                              final saTimezone = tz.getLocation('Africa/Johannesburg');
 
-                            // Convert to TZDateTime
-                            final tzNotificationTime = tz.TZDateTime.from(notificationTime, tz.local);
+                              // Convert to TZDateTime with South African timezone
+                              final tzNotificationTime = tz.TZDateTime.from(eventStartDateTime, saTimezone);
 
-                            // Only schedule if the notification time is in the future
-                            if (tzNotificationTime.isAfter(tz.TZDateTime.now(tz.local))) {
-                              await LocalNotificationsService.scheduleEventNotification(
-                                id: eventStartDateTime.millisecondsSinceEpoch ~/ 1000, // unique ID
-                                title: "Upcoming Event: $event_name",
-                                body: "Your event '$event_name' starts in 10 minutes!",
-                                scheduledTime: tzNotificationTime, // Pass TZDateTime directly
-                              );
+                              // IMPORTANT: Use the same timezone for current time comparison!
+                              final currentTime = tz.TZDateTime.now(saTimezone);
 
+                              print('Event scheduled for (Johannesburg): $tzNotificationTime');
+                              print('Current time (Johannesburg): $currentTime');
+
+                              final difference = tzNotificationTime.difference(currentTime);
+                              print('Time difference: ${difference.inMinutes} minutes (${difference.inSeconds} seconds)');
+                              print('Is future: ${tzNotificationTime.isAfter(currentTime)}');
+
+                              // Upload event to Firestore
+                              await uploadEvent(event_name, desc, dt, str_time, end_time);
+                              print('Event uploaded to Firestore');
+
+                              // Only schedule if the notification time is in the future
+                              if (tzNotificationTime.isAfter(currentTime)) {
+
+                                // Check if we can schedule exact notifications
+                                bool canScheduleExact = await LocalNotificationsService.canScheduleExactNotifications();
+                                print('Can schedule exact notifications: $canScheduleExact');
+
+                                if (!canScheduleExact) {
+                                  print('Requesting exact alarm permission...');
+                                  await LocalNotificationsService.requestExactAlarmsPermission();
+                                }
+
+                                final notificationId = eventStartDateTime.millisecondsSinceEpoch ~/ 1000;
+                                print('Scheduling notification with ID: $notificationId');
+
+                                // Schedule a test notification 30 seconds from now to verify scheduling works
+                                final testTime = currentTime.add(Duration(seconds: 30));
+                                await LocalNotificationsService.scheduleNotification(
+                                  id: notificationId + 999999, // Different ID for test
+                                  title: "TEST: $event_name",
+                                  body: "Test notification - if you see this in 30s, scheduling works!",
+                                  scheduledTime: testTime,
+                                );
+                                print('Test notification scheduled for: $testTime');
+
+                                // Schedule the actual notification
+                                await LocalNotificationsService.scheduleNotification(
+                                  id: notificationId,
+                                  title: "Upcoming Event: $event_name",
+                                  body: "Your event '$event_name' is starting now!",
+                                  scheduledTime: tzNotificationTime,
+                                );
+
+                                // Verify the notification was scheduled
+                                final pending = await LocalNotificationsService.getPendingNotifications();
+                                print('Total pending notifications: ${pending.length}');
+
+                                for (var notification in pending) {
+                                  print('Pending notification - ID: ${notification.id}, Title: ${notification.title}');
+                                }
+
+                                Fluttertoast.showToast(
+                                  msg: "Event scheduled! Test notification in 30s. Total pending: ${pending.length}",
+                                  backgroundColor: Colors.green[700],
+                                  textColor: Colors.white,
+                                  toastLength: Toast.LENGTH_LONG,
+                                );
+                              } else {
+                                print('Event is in the past - notification skipped');
+                                print('Event time: $tzNotificationTime');
+                                print('Current time: $currentTime');
+                                print('Difference: ${difference.inMinutes} minutes ago');
+
+                                Fluttertoast.showToast(
+                                  msg: "Event is ${difference.inMinutes.abs()} minutes in the past, notification skipped.",
+                                  backgroundColor: Colors.orange[700],
+                                  textColor: Colors.white,
+                                  toastLength: Toast.LENGTH_LONG,
+                                );
+                              }
+
+                              // Clear form
+                              eventName.clear();
+                              description.clear();
+                              startTime.clear();
+                              endTime.clear();
+                              date.clear();
+                              _formkey.currentState?.reset();
+
+                              // Navigate back
+                              Navigator.pop(context);
+
+                            } catch (e, stackTrace) {
+                              print('Error creating event: $e');
+                              print('Stack trace: $stackTrace');
                               Fluttertoast.showToast(
-                                msg: "Event scheduled with notification!",
-                                backgroundColor: Colors.green[700],
+                                msg: "Error creating event: ${e.toString()}",
+                                backgroundColor: Colors.red,
                                 textColor: Colors.white,
-                              );
-                            } else {
-                              Fluttertoast.showToast(
-                                msg: "Event is too soon or in the past, notification skipped.",
-                                backgroundColor: Colors.orange[700],
-                                textColor: Colors.white,
+                                toastLength: Toast.LENGTH_LONG,
                               );
                             }
-
-                            // Clear form
-                            eventName.clear();
-                            description.clear();
-                            startTime.clear();
-                            endTime.clear();
-                            date.clear();
-                            _formkey.currentState?.reset();
-
-                            // Navigate back
-                            Navigator.pop(context);
+                          } else {
+                            print('Form validation failed');
                           }
                         },
                         style: ElevatedButton.styleFrom(

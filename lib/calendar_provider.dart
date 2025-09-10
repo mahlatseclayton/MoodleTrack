@@ -20,7 +20,7 @@ class CalendarProvider with ChangeNotifier {
 
   Future<void> loadEvents() async {
     if (_hasLoaded && _events.isNotEmpty) {
-      print("🔄 Events already loaded, skipping...");
+
       return;
     }
 
@@ -29,31 +29,30 @@ class CalendarProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      print("🔍 Loading events...");
 
-      // --- 1. Get Moodle events ---
+
       final moodleEvents = await _moodleService.fetchUpcomingEvents();
-      print("✅ Found ${moodleEvents.length} Moodle events");
+
 
       // --- 2. Get Firestore events only for current Firebase user ---
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) {
-        print("❌ Firebase user not logged in");
+
         throw Exception("User not logged in");
       }
-      print("👤 Firebase UID: $uid");
+
 
       final snapshot = await FirebaseFirestore.instance
           .collection('events')
           .where('userId', isEqualTo: uid) // Ensure userId field matches this
           .get();
 
-      print("📊 Found ${snapshot.docs.length} Firestore events for user $uid");
+
 
       final firestoreEvents = snapshot.docs.map((doc) {
         final data = doc.data();
 
-        print("🔄 Processing Firestore event: $data");
+
 
         // Handle date field
         DateTime eventDate;
@@ -112,11 +111,11 @@ class CalendarProvider with ChangeNotifier {
       _events = [...moodleEvents, ...firestoreEvents];
       _events.sort((a, b) => a.startTime.compareTo(b.startTime));
 
-      print("🎉 Total events after merge: ${_events.length}");
+
       _hasLoaded = true;
     } catch (error) {
       _errorMessage = error.toString();
-      print('❌ Error loading events: $error');
+
       _hasLoaded = false;
     } finally {
       _isLoading = false;
@@ -129,7 +128,7 @@ class CalendarProvider with ChangeNotifier {
       return _isSameDay(event.startTime, day);
     }).toList();
 
-    print("📅 Events for ${day.toIso8601String().split('T')[0]}: ${dayEvents.length}");
+
     return dayEvents;
   }
 
