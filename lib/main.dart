@@ -1360,81 +1360,82 @@ class _addEventState extends State<addEvent> {
                   // Submit Button
                   SizedBox(
                     width: double.infinity,
-                    child:  ElevatedButton(
-                      onPressed: () async {
-        if (_formkey.currentState!.validate()) {
-        final event_name = eventName.text.toString();
-        final str_time = startTime.text.toString();
-        final end_time = endTime.text.toString();
-        final desc = description.text.toString();
-        final dt = date.text.toString();
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          if (_formkey.currentState!.validate()) {
+                            final event_name = eventName.text.toString();
+                            final str_time = startTime.text.toString();
+                            final end_time = endTime.text.toString();
+                            final desc = description.text.toString();
+                            final dt = date.text.toString();
 
-        // Parse start time
-        final eventStartDateTime = parseDateTime(dt, str_time);
+                            // Parse start time
+                            final eventStartDateTime = parseDateTime(dt, str_time);
 
-        // Upload event to Firestore
-        await uploadEvent(event_name, desc, dt, str_time, end_time);
+                            // Upload event to Firestore
+                            await uploadEvent(event_name, desc, dt, str_time, end_time);
 
-        // Schedule local notification 10 minutes before the event
-        final notificationTime = eventStartDateTime.subtract(const Duration(minutes: 10));
+                            // Schedule local notification 10 minutes before the event
+                            final notificationTime = eventStartDateTime.subtract(const Duration(minutes: 10));
 
-        // Convert to TZDateTime for scheduling
-        final tzNotificationTime = tz.TZDateTime.from(notificationTime, tz.local);
+                            // Convert to TZDateTime
+                            final tzNotificationTime = tz.TZDateTime.from(notificationTime, tz.local);
 
-        // Skip scheduling if the notification time is in the past
-        if (tzNotificationTime.isAfter(tz.TZDateTime.now(tz.local))) {
-        await LocalNotificationsService.scheduleEventNotification(
-        id: eventStartDateTime.millisecondsSinceEpoch ~/ 1000, // unique ID
-        title: "Upcoming Event: $event_name",
-        body: "Your event '$event_name' starts in 10 minutes!",
-        scheduledTime: tzNotificationTime, // pass TZDateTime
-        );
+                            // Only schedule if the notification time is in the future
+                            if (tzNotificationTime.isAfter(tz.TZDateTime.now(tz.local))) {
+                              await LocalNotificationsService.scheduleEventNotification(
+                                id: eventStartDateTime.millisecondsSinceEpoch ~/ 1000, // unique ID
+                                title: "Upcoming Event: $event_name",
+                                body: "Your event '$event_name' starts in 10 minutes!",
+                                scheduledTime: tzNotificationTime,
+                              );
 
-        Fluttertoast.showToast(
-        msg: "Event scheduled with notification!",
-        backgroundColor: Colors.green[700],
-        textColor: Colors.white,
-        );
-        } else {
-        Fluttertoast.showToast(
-        msg: "Event is too soon or in the past, notification skipped.",
-        backgroundColor: Colors.orange[700],
-        textColor: Colors.white,
-        );
-        }
+                              Fluttertoast.showToast(
+                                msg: "Event scheduled with notification!",
+                                backgroundColor: Colors.green[700],
+                                textColor: Colors.white,
+                              );
+                            } else {
+                              Fluttertoast.showToast(
+                                msg: "Event is too soon or in the past, notification skipped.",
+                                backgroundColor: Colors.orange[700],
+                                textColor: Colors.white,
+                              );
+                            }
 
-        // Clear form
-        eventName.clear();
-        description.clear();
-        startTime.clear();
-        endTime.clear();
-        date.clear();
-        _formkey.currentState?.reset();
+                            // Clear form
+                            eventName.clear();
+                            description.clear();
+                            startTime.clear();
+                            endTime.clear();
+                            date.clear();
+                            _formkey.currentState?.reset();
 
-        // Navigate back
-        Navigator.pop(context);
-        }
-        },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.orange[700],
-            padding: EdgeInsets.symmetric(vertical: 18),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 4,
-            shadowColor: Colors.orange.withOpacity(0.3),
-          ),
-          child: Text(
-            "Add Event",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
+                            // Navigate back
+                            Navigator.pop(context);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange[700],
+                          padding: EdgeInsets.symmetric(vertical: 18),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 4,
+                          shadowColor: Colors.orange.withOpacity(0.3),
+                        ),
+                        child: Text(
+                          "Add Event",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      )
 
-      ),
+
+                  ),
                 ],
               ),
             ),
