@@ -175,14 +175,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
 
-      appBar: AppBar(
-        backgroundColor: Colors.grey[500],
-        title: Text("Moodle Due Date Notifications",style:TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-        ),),
-
-      ),
       body: Column(
         children: [
 

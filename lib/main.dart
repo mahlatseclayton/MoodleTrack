@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -9,43 +7,67 @@ import '../services/token_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:learning_app/services/Notification.dart';
 import 'dart:convert';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:learning_app/screens/notifications_screen.dart';
-import 'AppData.dart';
 import 'calendar_provider.dart';
 import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
-
 import 'moodle_api_service.dart';
 import 'moodle_calendar_widget.dart';
-
-import 'dart:io';
-
-import 'moodle_calendar_widget.dart';
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  print("Background message: ${message.messageId}");
-}
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:learning_app/LocalNotificationsService.dart';
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+FlutterLocalNotificationsPlugin();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  tz.initializeTimeZones();
 
   try {
-    WidgetsFlutterBinding.ensureInitialized();
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     print('Firebase initialized!');
   } catch (e) {
     print('Firebase failed to initialize: $e');
   }
 
-  runApp(const AuthCheck());
+  // Initialize timezones (needed for scheduled notifications)
+
+  tz.setLocalLocation(tz.getLocation('Africa/Johannesburg')); // set your local timezone
+
+  // Initialize local notifications
+  const AndroidInitializationSettings androidSettings =
+  AndroidInitializationSettings('@mipmap/ic_launcher');
+
+  final DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
+    requestSoundPermission: true,
+    requestBadgePermission: true,
+    requestAlertPermission: true,
+    onDidReceiveLocalNotification: (id, title, body, payload) async {
+      print('iOS Notification Received: $title | $body');
+      // Handle notification tapped if needed
+    },
+  );
+
+  final InitializationSettings initializationSettings = InitializationSettings(
+    android: androidSettings,
+    iOS: iosSettings,
+  );
+
+  await flutterLocalNotificationsPlugin.initialize(
+    initializationSettings,
+    onDidReceiveNotificationResponse: (NotificationResponse response) {
+      print('Notification tapped: ${response.payload}');
+      // Navigate to event details if needed
+    },
+  );
+
+  runApp(AuthCheck()); // replace with your main app widget
 }
+
 class AuthCheck extends StatefulWidget {
   const AuthCheck({super.key});
 
@@ -248,17 +270,6 @@ class _LoginPageState extends State<LoginPage> {
   // Firebase Authentication instance
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  /// ✅ Get FCM token
-  Future<String?> _getFcmToken() async {
-    try {
-      final _messaging = FirebaseMessaging.instance;
-      String? token = await _messaging.getToken();
-      return token;
-    } catch (e) {
-      print('FCM token error: $e');
-      return null;
-    }
-  }
 
   /// ✅ Moodle token request
   Future<String?> _getMoodleToken(String username, String password) async {
@@ -308,7 +319,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   /// ✅ Register or update user in Firestore using Moodle student number
-  Future<void> _registerUser(String userId, String email, String fcmToken) async {
+  Future<void> _registerUser(String userId, String email) async {
     try {
       final userDoc = FirebaseFirestore.instance.collection('users').doc(userId);
       final snapshot = await userDoc.get();
@@ -316,7 +327,6 @@ class _LoginPageState extends State<LoginPage> {
       if (snapshot.exists) {
         // Update existing user's FCM token
         await userDoc.update({
-          'fcmToken': fcmToken,
           'email': email,
           'lastLogin': FieldValue.serverTimestamp(),
         });
@@ -326,7 +336,7 @@ class _LoginPageState extends State<LoginPage> {
         await userDoc.set({
           'userId': userId,
           'email': email,
-          'fcmToken': fcmToken,
+
           'createdAt': FieldValue.serverTimestamp(),
           'lastLogin': FieldValue.serverTimestamp(),
         });
@@ -373,14 +383,9 @@ class _LoginPageState extends State<LoginPage> {
           throw Exception('Could not create Firebase user');
         }
 
-        // 4. Get FCM token
-        final fcmToken = await _getFcmToken();
-        if (fcmToken == null) {
-          throw Exception('Could not get notification token');
-        }
 
         // 5. Register or update user in Firestore
-        await _registerUser(username, email, fcmToken);
+        await _registerUser(username, email);
 
         // 6. Store student number for later use
         await _storeStudentNumber(username);
@@ -1355,45 +1360,81 @@ class _addEventState extends State<addEvent> {
                   // Submit Button
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (_formkey.currentState!.validate()) {
-                          final event_name = eventName.text.toString();
-                          final str_time = startTime.text.toString();
-                          final end_time = endTime.text.toString();
-                          final desc = description.text.toString();
-                          final dt = date.text.toString();
-                          uploadEvent(event_name, desc, dt, str_time, end_time);
-                          eventName.clear();
-                          description.clear();
-                          startTime.clear();
-                          endTime.clear();
-                          date.clear();
-                          _formkey.currentState?.reset();
+                    child:  ElevatedButton(
+                      onPressed: () async {
+        if (_formkey.currentState!.validate()) {
+        final event_name = eventName.text.toString();
+        final str_time = startTime.text.toString();
+        final end_time = endTime.text.toString();
+        final desc = description.text.toString();
+        final dt = date.text.toString();
 
-                          // Navigate back after successful submission
-                          Navigator.pop(context);
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange[700],
-                        padding: EdgeInsets.symmetric(vertical: 18),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 4,
-                        shadowColor: Colors.orange.withOpacity(0.3),
-                      ),
-                      child: Text(
-                        "Add Event",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
+        // Parse start time
+        final eventStartDateTime = parseDateTime(dt, str_time);
+
+        // Upload event to Firestore
+        await uploadEvent(event_name, desc, dt, str_time, end_time);
+
+        // Schedule local notification 10 minutes before the event
+        final notificationTime = eventStartDateTime.subtract(const Duration(minutes: 10));
+
+        // Convert to TZDateTime for scheduling
+        final tzNotificationTime = tz.TZDateTime.from(notificationTime, tz.local);
+
+        // Skip scheduling if the notification time is in the past
+        if (tzNotificationTime.isAfter(tz.TZDateTime.now(tz.local))) {
+        await LocalNotificationsService.scheduleEventNotification(
+        id: eventStartDateTime.millisecondsSinceEpoch ~/ 1000, // unique ID
+        title: "Upcoming Event: $event_name",
+        body: "Your event '$event_name' starts in 10 minutes!",
+        scheduledTime: tzNotificationTime, // pass TZDateTime
+        );
+
+        Fluttertoast.showToast(
+        msg: "Event scheduled with notification!",
+        backgroundColor: Colors.green[700],
+        textColor: Colors.white,
+        );
+        } else {
+        Fluttertoast.showToast(
+        msg: "Event is too soon or in the past, notification skipped.",
+        backgroundColor: Colors.orange[700],
+        textColor: Colors.white,
+        );
+        }
+
+        // Clear form
+        eventName.clear();
+        description.clear();
+        startTime.clear();
+        endTime.clear();
+        date.clear();
+        _formkey.currentState?.reset();
+
+        // Navigate back
+        Navigator.pop(context);
+        }
+        },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.orange[700],
+            padding: EdgeInsets.symmetric(vertical: 18),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 4,
+            shadowColor: Colors.orange.withOpacity(0.3),
+          ),
+          child: Text(
+            "Add Event",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+
+      ),
                 ],
               ),
             ),
