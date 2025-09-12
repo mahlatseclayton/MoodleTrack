@@ -287,11 +287,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passController = TextEditingController();
 
-  // Firebase Authentication instance
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
-
-  /// ✅ Moodle token request
   Future<String?> _getMoodleToken(String username, String password) async {
     try {
       final response = await http.get(
@@ -311,70 +307,93 @@ class _LoginPageState extends State<LoginPage> {
       return null;
     }
   }
-
-  /// ✅ Create Firebase user with email and password
   Future<UserCredential?> _createFirebaseUser(String email, String password) async {
     try {
-      // First try to sign in
-      try {
-        return await _auth.signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
-      } on FirebaseAuthException catch (e) {
-        if (e.code == 'user-not-found') {
-          // If user doesn't exist, create a new one
-          return await _auth.createUserWithEmailAndPassword(
-            email: email,
-            password: password,
-          );
-        } else {
-          rethrow;
-        }
+      print('🔥 Creating new Firebase user for: $email');
+
+      return await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } on FirebaseAuthException catch (e) {
+      print('Firebase creation failed: ${e.code} - ${e.message}');
+
+      switch (e.code) {
+        case 'weak-password':
+          Fluttertoast.showToast(msg: "Password is too weak");
+          break;
+        case 'email-already-in-use':
+          Fluttertoast.showToast(msg: "Email already registered");
+          break;
+        case 'invalid-email':
+          Fluttertoast.showToast(msg: "Invalid email format");
+          break;
+        case 'operation-not-allowed':
+          Fluttertoast.showToast(msg: "Email/password authentication is disabled");
+          break;
+        case 'network-request-failed':
+          Fluttertoast.showToast(msg: "Network error. Check your connection");
+          break;
+        default:
+          Fluttertoast.showToast(msg: "Registration failed: ${e.message}");
       }
+      return null;
     } catch (e) {
-      print('Firebase auth error: $e');
+      print('Unexpected Firebase auth error: $e');
+      Fluttertoast.showToast(msg: "Authentication error: ${e.toString()}");
+      return null;
+    }
+  }
+  Future<UserCredential?> _signInFirebaseUser(String email, String password) async {
+    try {
+      print('🔥 Signing in existing Firebase user: $email');
+
+      return await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } on FirebaseAuthException catch (e) {
+      print('Firebase sign in failed: ${e.code} - ${e.message}');
+
+      switch (e.code) {
+        case 'user-not-found':
+        case 'invalid-credential':
+        case 'wrong-password':
+        // These are expected for new users - don't show error
+          print('User not found in Firebase - will create new user');
+          return null;
+        case 'user-disabled':
+          Fluttertoast.showToast(msg: "Account has been disabled");
+          break;
+        case 'too-many-requests':
+          Fluttertoast.showToast(msg: "Too many failed attempts. Try again later");
+          break;
+        case 'network-request-failed':
+          Fluttertoast.showToast(msg: "Network error. Check your connection");
+          break;
+        default:
+          Fluttertoast.showToast(msg: "Sign in failed: ${e.message}");
+      }
+      return null;
+    } catch (e) {
+      print('Unexpected Firebase sign in error: $e');
       return null;
     }
   }
 
-  /// ✅ Register or update user in Firestore using Moodle student number
-  Future<void> _registerUser(String userId, String email) async {
+  Future<bool> _userExistsInFirestore(String studentNumber) async {
     try {
-      final userDoc = FirebaseFirestore.instance.collection('users').doc(userId);
-      final snapshot = await userDoc.get();
-
-      if (snapshot.exists) {
-        // Update existing user's FCM token
-        await userDoc.update({
-          'email': email,
-          'lastLogin': FieldValue.serverTimestamp(),
-        });
-        print('🔄 Updated existing user: $userId');
-      } else {
-        // Create new user
-        await userDoc.set({
-          'userId': userId,
-          'email': email,
-
-          'createdAt': FieldValue.serverTimestamp(),
-          'lastLogin': FieldValue.serverTimestamp(),
-        });
-        print('✅ Created new user: $userId');
-      }
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(studentNumber)
+          .get();
+      return userDoc.exists;
     } catch (e) {
-      print('❌ Firestore user error: $e');
-      Fluttertoast.showToast(msg: "User registration failed");
+      print('Error checking user existence: $e');
+      return false;
     }
   }
 
-  /// ✅ Store student number for later use
-  Future<void> _storeStudentNumber(String studentNumber) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('student_number', studentNumber);
-  }
-
-  /// ✅ Main login function
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -382,47 +401,104 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final email = emailController.text.trim();
-      final username = email.substring(0, 7); // Moodle student number
       final password = passController.text.trim();
 
-      print('🔐 Attempting Moodle login for: $username');
+      // Validate email format
+      if (!email.contains('@students.wits.ac.za')) {
+        Fluttertoast.showToast(msg: "Please use your Wits student email");
+        return;
+      }
 
-      // 1. Get Moodle token
+      // Extract student number (should be 7 digits)
+      final emailParts = email.split('@');
+      if (emailParts.isEmpty || emailParts[0].length != 7) {
+        Fluttertoast.showToast(msg: "Invalid student number format");
+        return;
+      }
+
+      final username = emailParts[0]; // Moodle student number
+
+      // Validate password strength for Firebase
+      if (password.length < 6) {
+        Fluttertoast.showToast(msg: "Password must be at least 6 characters");
+        return;
+      }
+
+      print('🔐 Step 1: Attempting Moodle authentication for: $username');
+
+      // STEP 1: Authenticate with Moodle FIRST
       final token = await _getMoodleToken(username, password);
 
-      if (token != null) {
-        print('✅ Moodle authentication successful');
+      if (token == null) {
+        print('❌ Moodle authentication failed');
+        Fluttertoast.showToast(msg: "Invalid Wits student credentials");
+        return;
+      }
 
-        // 2. Store Moodle token locally
-        await TokenService.storeToken(token);
+      print('✅ Step 1 Complete: Moodle authentication successful');
 
-        // 3. Create or sign in Firebase user
-        final userCredential = await _createFirebaseUser(email, password);
+      // STEP 2: Store Moodle token
+      await TokenService.storeToken(token);
+
+      // STEP 3: Check if this is a returning user or new user
+      print('🔍 Step 2: Checking if user exists in system...');
+
+      // First try to sign in existing Firebase user
+      UserCredential? userCredential = await _signInFirebaseUser(email, password);
+
+      if (userCredential == null) {
+        // User doesn't exist in Firebase, check if they exist in Firestore
+        bool existsInFirestore = await _userExistsInFirestore(username);
+
+        if (existsInFirestore) {
+          // Edge case: User exists in Firestore but not in Firebase Auth
+          // This shouldn't happen, but let's handle it
+          print('⚠️ User exists in Firestore but not in Firebase Auth');
+          Fluttertoast.showToast(msg: "Account sync issue. Please contact support.");
+          return;
+        }
+
+        // STEP 4: Create new Firebase user (only for genuinely new users)
+        print('✅ Step 3: New user detected. Creating Firebase account...');
+        userCredential = await _createFirebaseUser(email, password);
 
         if (userCredential == null) {
           throw Exception('Could not create Firebase user');
         }
 
+        print('✅ Step 3 Complete: New Firebase user created: ${userCredential.user?.uid}');
 
-        // 5. Register or update user in Firestore
+        // STEP 5: Create user profile in Firestore
+        print('📝 Step 4: Creating user profile in Firestore...');
         await _registerUser(username, email);
+        print('✅ Step 4 Complete: User profile created');
 
-        // 6. Store student number for later use
-        await _storeStudentNumber(username);
+        Fluttertoast.showToast(msg: "Account created successfully!");
+      } else {
+        // STEP 4: Update existing user
+        print('✅ Step 3: Existing user signed in: ${userCredential.user?.uid}');
 
-        // 7. Navigate to MainPage
+        // Update user info in Firestore
+        print('🔄 Step 4: Updating user profile...');
+        await _registerUser(username, email);
+        print('✅ Step 4 Complete: User profile updated');
+
+        Fluttertoast.showToast(msg: "Welcome back!");
+      }
+
+      // STEP 6: Store student number for later use
+      await _storeStudentNumber(username);
+
+      // STEP 7: Navigate to MainPage
+      if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => MainPage()),
         );
-
-        Fluttertoast.showToast(msg: "Login successful!");
-      } else {
-        print('❌ Moodle authentication failed');
-        Fluttertoast.showToast(msg: "Invalid student credentials");
       }
+
     } catch (e) {
-      print('Login error: $e');
+      print('❌ Login error: $e');
       Fluttertoast.showToast(msg: "Login failed: ${e.toString()}");
     } finally {
       if (mounted) {
@@ -430,6 +506,43 @@ class _LoginPageState extends State<LoginPage> {
       }
     }
   }
+
+
+  Future<void> _registerUser(String userId, String email) async {
+    try {
+      final userDoc = FirebaseFirestore.instance.collection('users').doc(userId);
+      final snapshot = await userDoc.get();
+
+      if (snapshot.exists) {
+        // Update existing user
+        await userDoc.update({
+          'email': email,
+          'lastLogin': FieldValue.serverTimestamp(),
+        });
+        print('🔄 Updated existing user profile: $userId');
+      } else {
+        // Create new user profile
+        await userDoc.set({
+          'userId': userId,
+          'email': email,
+          'createdAt': FieldValue.serverTimestamp(),
+          'lastLogin': FieldValue.serverTimestamp(),
+        });
+        print('✅ Created new user profile: $userId');
+      }
+    } catch (e) {
+      print('❌ Firestore user error: $e');
+      Fluttertoast.showToast(msg: "User profile creation failed");
+      rethrow; // Re-throw to handle in login function
+    }
+  }
+  //
+
+  Future<void> _storeStudentNumber(String studentNumber) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('student_number', studentNumber);
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -694,8 +807,6 @@ class _DrawerTile extends StatelessWidget {
     );
   }
 }
-
-
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
 
@@ -1435,17 +1546,7 @@ class _addEventState extends State<addEvent> {
                                 final notificationId = eventStartDateTime.millisecondsSinceEpoch ~/ 1000;
                                 print('Scheduling notification with ID: $notificationId');
 
-                                // Schedule a test notification 30 seconds from now to verify scheduling works
-                                final testTime = currentTime.add(Duration(seconds: 30));
-                                await LocalNotificationsService.scheduleNotification(
-                                  id: notificationId + 999999, // Different ID for test
-                                  title: "TEST: $event_name",
-                                  body: "Test notification - if you see this in 30s, scheduling works!",
-                                  scheduledTime: testTime,
-                                );
-                                print('Test notification scheduled for: $testTime');
 
-                                // Schedule the actual notification
                                 await LocalNotificationsService.scheduleNotification(
                                   id: notificationId,
                                   title: "Upcoming Event: $event_name",
@@ -1453,7 +1554,6 @@ class _addEventState extends State<addEvent> {
                                   scheduledTime: tzNotificationTime,
                                 );
 
-                                // Verify the notification was scheduled
                                 final pending = await LocalNotificationsService.getPendingNotifications();
                                 print('Total pending notifications: ${pending.length}');
 
@@ -1461,12 +1561,6 @@ class _addEventState extends State<addEvent> {
                                   print('Pending notification - ID: ${notification.id}, Title: ${notification.title}');
                                 }
 
-                                Fluttertoast.showToast(
-                                  msg: "Event scheduled! Test notification in 30s. Total pending: ${pending.length}",
-                                  backgroundColor: Colors.green[700],
-                                  textColor: Colors.white,
-                                  toastLength: Toast.LENGTH_LONG,
-                                );
                               } else {
                                 print('Event is in the past - notification skipped');
                                 print('Event time: $tzNotificationTime');
