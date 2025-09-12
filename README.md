@@ -1,4 +1,4 @@
-# learning_app
+# MoodleTrack
 
 A new Flutter project.
 

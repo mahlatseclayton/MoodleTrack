@@ -1,6 +1,6 @@
 {
-    "name": "learning_app",
-    "short_name": "learning_app",
+    "name": "MoodleTrack",
+    "short_name": "MoodleTrack",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#ffffff",

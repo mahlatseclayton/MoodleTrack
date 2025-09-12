@@ -5,9 +5,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../services/token_service.dart';
 import 'package:http/http.dart' as http;
-import 'package:learning_app/services/Notification.dart';
+import 'package:MoodleTrack/services/Notification.dart';
 import 'dart:convert';
-import 'package:learning_app/screens/notifications_screen.dart';
+import 'package:MoodleTrack/screens/notifications_screen.dart';
 import 'calendar_provider.dart';
 import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -18,7 +18,7 @@ import 'moodle_calendar_widget.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:learning_app/LocalNotificationsService.dart';
+import 'package:MoodleTrack/LocalNotificationsService.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -1487,7 +1487,6 @@ class _addEventState extends State<addEvent> {
                   ),
                   SizedBox(height: 30),
 
-                  // Submit Button
                   SizedBox(
                     width: double.infinity,
                       child: ElevatedButton(

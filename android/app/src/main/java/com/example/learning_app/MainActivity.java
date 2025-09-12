@@ -1,4 +1,4 @@
-package com.example.learning_app;
+package com.example.MoodleTrack;
 
 import io.flutter.embedding.android.FlutterActivity;
 

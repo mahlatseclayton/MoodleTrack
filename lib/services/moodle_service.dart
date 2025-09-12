@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:learning_app/services/token_service.dart';
+import 'package:MoodleTrack/services/token_service.dart';
 import '../models/notification_response.dart';
 import '../models/moodle_notification.dart';
 
