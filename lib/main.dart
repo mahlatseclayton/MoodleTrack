@@ -48,76 +48,9 @@ Future<void> main() async {
     print('LocalNotificationsService initialization failed: $e');
   }
 
-  // Use AuthCheck instead of NotificationTestApp for your real app
   runApp(AuthCheck());
 }
-class NotificationTestApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: Text("Notification Test")),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                onPressed: () async {
-                  // Test immediate notification
-                  await LocalNotificationsService.showNotification(
-                    "Test Immediate",
-                    "This should show right away",
-                  );
-                },
-                child: Text("Show Immediate Notification"),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () async {
-                  // Test scheduled notification (10 seconds from now)
-                  final scheduledTime = tz.TZDateTime.now(tz.local).add(Duration(seconds: 10));
 
-                  await LocalNotificationsService.scheduleNotification(
-                    id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-                    title: "Test Scheduled",
-                    body: "This should appear in 10 seconds",
-                    scheduledTime: scheduledTime,
-                  );
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Notification scheduled for 10 seconds from now")),
-                  );
-                },
-                child: Text("Schedule Test Notification (10s)"),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () async {
-                  final pending = await LocalNotificationsService.getPendingNotifications();
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: Text("Pending Notifications"),
-                      content: Text("Count: ${pending.length}\n" +
-                          pending.map((n) => "ID: ${n.id}, Title: ${n.title}").join("\n")),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text("OK"),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                child: Text("Check Pending Notifications"),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 class AuthCheck extends StatefulWidget {
   const AuthCheck({super.key});
 
