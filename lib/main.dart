@@ -1562,10 +1562,6 @@ class _addEventState extends State<addEvent> {
                                 }
 
                               } else {
-                                print('Event is in the past - notification skipped');
-                                print('Event time: $tzNotificationTime');
-                                print('Current time: $currentTime');
-                                print('Difference: ${difference.inMinutes} minutes ago');
 
                                 Fluttertoast.showToast(
                                   msg: "Event is ${difference.inMinutes.abs()} minutes in the past, notification skipped.",
@@ -1583,7 +1579,6 @@ class _addEventState extends State<addEvent> {
                               date.clear();
                               _formkey.currentState?.reset();
 
-                              // Navigate back
                               Navigator.pop(context);
 
                             } catch (e, stackTrace) {
