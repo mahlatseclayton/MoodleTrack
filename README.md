@@ -1,6 +1,6 @@
-# 📚 MoodleTracker  
+# 📚 MoodleTrack
 
-MoodleTracker is a **cross-platform mobile app (Android & iOS)** designed for **Wits University students** to easily keep up with their **Moodle notifications and events**. The app also lets students **add personal events** to their calendar and receive **reminder notifications** before those events.  
+MoodleTrack is a **cross-platform mobile app (Android & iOS)** designed for **Wits University students** to easily keep up with their **Moodle notifications and events**. The app also lets students **add personal events** to their calendar and receive **reminder notifications** before those events.  
 
 Built with **Flutter (Dart)**, using the **Moodle REST API** and **Firebase** for backend services.  
 
@@ -55,7 +55,7 @@ If you want to run the app from source:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/MoodleTracker.git
+git clone https://github.com/mahlatseclayton/MoodleTrack.git
 cd MoodleTracker
 
 # Install dependencies
